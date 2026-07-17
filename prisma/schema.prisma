@@ -1,0 +1,524 @@
+// APS Platform domain schema.
+//
+// Tenancy invariants (APP-SPEC §3, CLAUDE.md non-negotiables):
+// - Every domain model carries engagementId and @@unique([id, engagementId]).
+// - Child relations use composite FKs ([childFk, engagementId] → [id, engagementId])
+//   so a cross-engagement reference is physically unwritable at the database,
+//   regardless of application-layer bugs.
+// - No hard-coded capacity limits anywhere (workbook quirk #12).
+//
+// Numeric policy: Float (double precision) for all methodology numbers —
+// reproduces Excel's IEEE-754 arithmetic exactly. Decimal only for money
+// (CostRecord.amount), converted to number once at the snapshot boundary.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────── Enums ───────────────────────────────
+
+enum EngagementStatus {
+  ACTIVE
+  ARCHIVED
+  PENDING_PURGE
+}
+
+enum Role {
+  ENGAGEMENT_LEAD
+  CONSULTANT
+  CLIENT_RESPONDENT
+  CLIENT_VIEWER
+}
+
+enum CapabilityLevel {
+  L0
+  L1
+  L2
+}
+
+enum SurveyType {
+  DEMOGRAPHICS
+  IT_HEALTH
+  BUSINESS_VALUE
+  FINANCE
+}
+
+enum ScoreFamily {
+  BUSINESS
+  IT
+  IT_NON_REPORT
+  NONE
+}
+
+enum AnswerKind {
+  SCORE_1_5
+  TEXT
+  NUMBER
+  CURRENCY
+  DATE
+  BOOLEAN
+  OPTION
+}
+
+enum SurveyStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETE
+}
+
+enum Disposition {
+  UNKNOWN
+  REDESIGN
+  KEEP_AS_IS
+  TERMINATE
+  RETOOL
+}
+
+enum FilterHit {
+  OUT_OF_SCOPE
+  NO_LONGER_UTILIZED
+  TERMINATE
+  REPLACED
+  IN_FLIGHT
+}
+
+enum MeetsFutureState {
+  YES
+  NO
+  PARTIAL
+}
+
+enum CostVersionType {
+  ACTUAL
+  BUDGET
+  FORECAST
+}
+
+// ─────────────────────── Engagement & membership ───────────────────────
+
+model Engagement {
+  id                    String           @id @default(cuid())
+  clerkOrgId            String?          @unique // null only in dev mode; hard deny in Clerk mode
+  name                  String
+  clientName            String
+  status                EngagementStatus @default(ACTIVE)
+  currency              String           @default("USD")
+  fiscalYearConvention  String           @default("FY")
+  strictWorkbookScoring Boolean          @default(false) // quirk #3 escape hatch
+  splitHeatmapYellow    Boolean          @default(false) // APP-SPEC §4.9 toggle
+  dispositionLabels     Json? // per-engagement display-label overrides (quirk #10)
+  configVersion         Int              @default(0) // bumped on weighting/threshold/setting changes
+  purgeScheduledAt      DateTime? // two-phase purge: set when PENDING_PURGE
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  memberships        Membership[]
+  applications       Application[]
+  capabilityNodes    CapabilityNode[]
+  surveyTemplates    SurveyTemplate[]
+  surveyQuestions    SurveyQuestion[]
+  guidelineAnchors   GuidelineAnchor[]
+  questionWeightings QuestionWeighting[]
+  thresholdConfig    ThresholdConfig?
+  surveyAssignments  SurveyAssignment[]
+  surveyResponses    SurveyResponse[]
+  answers            Answer[]
+  dispositionResults DispositionResult[]
+  dispositionOverrides DispositionOverride[]
+  costRecords        CostRecord[]
+  optionLists        OptionList[]
+  optionItems        OptionItem[]
+  auditEvents        AuditEvent[]
+}
+
+model Membership {
+  id           String  @id @default(cuid())
+  engagementId String
+  clerkUserId  String? // null until an email invite is accepted; "dev:<name>" in dev mode
+  email        String
+  displayName  String?
+  role         Role
+
+  engagement  Engagement         @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  assignments SurveyAssignment[]
+
+  @@unique([id, engagementId])
+  @@unique([engagementId, email])
+  @@unique([engagementId, clerkUserId])
+  @@index([engagementId])
+}
+
+// ───────────────────────── Question bank (global) ─────────────────────────
+// Unscoped BY DESIGN: the seed source cloned into each engagement at creation.
+// Accessible only through the admin client — the scoped guard denies these models.
+
+model BankTemplate {
+  id          String     @id @default(cuid())
+  type        SurveyType @unique
+  name        String
+  bankVersion Int        @default(1)
+
+  questions BankQuestion[]
+}
+
+model BankQuestion {
+  id            String      @id @default(cuid())
+  templateId    String
+  code          String // stable key, e.g. "IT_TC_AVAILABILITY"
+  section       String
+  text          String
+  description   String?
+  orderIndex    Int
+  scoreFamily   ScoreFamily
+  answerKind    AnswerKind
+  optionListKey String? // for OPTION questions: OptionList.key within the engagement
+  legacyRef     String? // workbook sheet+row (inventory §2.2) for the Phase 5 importer
+
+  template BankTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  anchors  BankAnchor[]
+
+  @@unique([templateId, code])
+}
+
+model BankAnchor {
+  id         String @id @default(cuid())
+  questionId String
+  value      Int // 1..5
+  text       String
+
+  question BankQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, value])
+}
+
+// ─────────────────────── Per-engagement survey config ───────────────────────
+
+model SurveyTemplate {
+  id           String     @id @default(cuid())
+  engagementId String
+  type         SurveyType
+  name         String
+  bankVersion  Int        @default(1) // provenance: which bank version was cloned
+
+  engagement  Engagement         @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  questions   SurveyQuestion[]
+  assignments SurveyAssignment[]
+  responses   SurveyResponse[]
+
+  @@unique([id, engagementId])
+  @@unique([engagementId, type])
+}
+
+model SurveyQuestion {
+  id            String      @id @default(cuid())
+  engagementId  String
+  templateId    String
+  code          String
+  section       String
+  text          String
+  description   String?
+  orderIndex    Int
+  scoreFamily   ScoreFamily
+  answerKind    AnswerKind
+  optionListKey String?
+  legacyRef     String?
+
+  engagement Engagement        @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  template   SurveyTemplate    @relation(fields: [templateId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  anchors    GuidelineAnchor[]
+  weighting  QuestionWeighting?
+  answers    Answer[]
+
+  @@unique([id, engagementId])
+  @@unique([templateId, code])
+  @@index([engagementId])
+}
+
+model GuidelineAnchor {
+  id           String @id @default(cuid())
+  engagementId String
+  questionId   String
+  value        Int // 1..5
+  text         String
+
+  engagement Engagement     @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  question   SurveyQuestion @relation(fields: [questionId, engagementId], references: [id, engagementId], onDelete: Cascade)
+
+  @@unique([id, engagementId])
+  @@unique([questionId, value])
+  @@index([engagementId])
+}
+
+model QuestionWeighting {
+  id               String @id @default(cuid())
+  engagementId     String
+  questionId       String
+  importanceRating Int    @default(2) // 0=N/A .. 5=Very important; default "Normal" (tool-neutral)
+
+  engagement Engagement     @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  question   SurveyQuestion @relation(fields: [questionId, engagementId], references: [id, engagementId], onDelete: Cascade)
+
+  @@unique([id, engagementId])
+  @@unique([questionId, engagementId])
+  @@index([engagementId])
+}
+
+model ThresholdConfig {
+  id           String @id @default(cuid())
+  engagementId String @unique
+  optBv        Float  @default(3.0)
+  urgBv        Float  @default(2.0)
+  optIt        Float  @default(3.0)
+  urgIt        Float  @default(2.0)
+  heatT1       Float  @default(0.10)
+  heatT2       Float  @default(0.26) // must exceed heatT1; retain share is derived 1 − t2
+
+  engagement Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+
+  @@unique([id, engagementId])
+}
+
+// ───────────────────────────── Inventory ─────────────────────────────
+
+model Application {
+  id                      String            @id @default(cuid())
+  engagementId            String
+  appNumber               Int // per-engagement human key (workbook App ID); DISPLAY ONLY, never in URLs
+  name                    String
+  acronym                 String?
+  description             String?
+  applicationType         String? // value from OptionList "applicationType"
+  businessFunctionDetail  String?
+  target                  String?
+  meetsFutureState        MeetsFutureState?
+  actionPlanAssignment    String? // value from OptionList "actionPlanAssignment"
+  actionPlanJustification String?
+  missionCritical         Boolean           @default(false)
+  comments                String?
+  // Scope flags — the filter-cascade inputs (§4.8); booleans per quirk #5
+  inScope                 Boolean           @default(true)
+  isUtilized              Boolean           @default(true)
+  isReplaced              Boolean           @default(false)
+  inFlight                Boolean           @default(false)
+  // Deepest assigned capability node (L0/L1/L2 derived from the tree at read
+  // time — a 3-FK triple can drift inconsistent and silently miscount heat
+  // cells). Composite same-engagement FK added via raw SQL in the migration
+  // (Prisma cannot mix an optional FK column with the required engagementId).
+  capabilityNodeId        String?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+
+  engagement  Engagement          @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  assignments SurveyAssignment[]
+  responses   SurveyResponse[]
+  result      DispositionResult?
+  override    DispositionOverride?
+  costRecords CostRecord[]
+
+  @@unique([id, engagementId])
+  @@unique([engagementId, appNumber])
+  @@index([engagementId])
+  @@index([capabilityNodeId])
+}
+
+model CapabilityNode {
+  id            String          @id @default(cuid())
+  engagementId  String
+  parentId      String?
+  level         CapabilityLevel
+  name          String
+  isPlaceholder Boolean         @default(false) // "Unassigned" (the VBA "Level L0"/"Level L1" replacement)
+
+  engagement Engagement       @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  parent     CapabilityNode?  @relation("CapabilityTree", fields: [parentId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  children   CapabilityNode[] @relation("CapabilityTree")
+
+  // Root-level (parentId null) name uniqueness is enforced in the service
+  // layer: Postgres treats NULLs as distinct in unique indexes.
+  @@unique([id, engagementId])
+  @@unique([engagementId, parentId, name])
+  @@index([engagementId])
+}
+
+// ───────────────────────────── Survey data ─────────────────────────────
+
+model SurveyAssignment {
+  id            String   @id @default(cuid())
+  engagementId  String
+  applicationId String
+  templateId    String
+  membershipId  String
+  createdAt     DateTime @default(now())
+
+  engagement  Engagement     @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  application Application    @relation(fields: [applicationId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  template    SurveyTemplate @relation(fields: [templateId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  membership  Membership     @relation(fields: [membershipId, engagementId], references: [id, engagementId], onDelete: Cascade)
+
+  @@unique([id, engagementId])
+  @@unique([applicationId, templateId, membershipId])
+  @@index([engagementId])
+  @@index([membershipId]) // respondent queue lookup
+}
+
+model SurveyResponse {
+  id            String       @id @default(cuid())
+  engagementId  String
+  applicationId String
+  templateId    String
+  status        SurveyStatus @default(NOT_STARTED) // proper enum (quirk #6 fix)
+  updatedById   String? // Membership id (no FK: informational)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  engagement  Engagement     @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  application Application    @relation(fields: [applicationId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  template    SurveyTemplate @relation(fields: [templateId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  answers     Answer[]
+
+  @@unique([id, engagementId])
+  @@unique([applicationId, templateId])
+  @@index([engagementId])
+}
+
+model Answer {
+  id           String  @id @default(cuid())
+  engagementId String
+  responseId   String
+  questionId   String
+  isNA         Boolean @default(false) // explicit N/A (quirk #2); unanswered = no row at all
+  numericValue Float? // SCORE_1_5 stores 1–5; NUMBER/CURRENCY amounts
+  textValue    String? // TEXT/DATE/OPTION
+  boolValue    Boolean?
+
+  engagement Engagement     @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  response   SurveyResponse @relation(fields: [responseId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  question   SurveyQuestion @relation(fields: [questionId, engagementId], references: [id, engagementId], onDelete: Cascade)
+
+  @@unique([id, engagementId])
+  @@unique([responseId, questionId])
+  @@index([engagementId])
+}
+
+// ─────────────────────── Derived results & overrides ───────────────────────
+
+/// Derived data ONLY — rewritten wholesale by recompute. Authored data
+/// (overrides) lives in DispositionOverride so recompute can never destroy it.
+model DispositionResult {
+  id                  String      @id @default(cuid())
+  engagementId        String
+  applicationId       String
+  itScore             Float?
+  bvScore             Float?
+  itPartial           Boolean     @default(false)
+  bvPartial           Boolean     @default(false)
+  itNonReportScore    Float?
+  financialScore      Float?
+  computedDisposition Disposition @default(UNKNOWN)
+  filterHit           FilterHit?
+  analysisCandidate   Boolean     @default(false)
+  veryLowBv           Boolean     @default(false)
+  veryLowIt           Boolean     @default(false)
+  configVersion       Int         @default(0)
+  computedAt          DateTime    @default(now())
+
+  engagement  Engagement  @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId, engagementId], references: [id, engagementId], onDelete: Cascade)
+
+  @@unique([id, engagementId])
+  @@unique([applicationId, engagementId])
+  @@index([engagementId])
+}
+
+model DispositionOverride {
+  id            String      @id @default(cuid())
+  engagementId  String
+  applicationId String
+  disposition   Disposition // constrained to the four R values in the action layer + CHECK constraint
+  justification String
+  authorId      String // Membership id
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  engagement  Engagement  @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId, engagementId], references: [id, engagementId], onDelete: Cascade)
+
+  @@unique([id, engagementId])
+  @@unique([applicationId, engagementId])
+  @@index([engagementId])
+}
+
+// ───────────────────────────── Financials ─────────────────────────────
+
+model CostRecord {
+  id            String          @id @default(cuid())
+  engagementId  String
+  applicationId String
+  fiscalYear    String // e.g. "FY26"
+  versionType   CostVersionType
+  category      String // Infrastructure | AppMaintenance | AppDevelopment | Software
+  lineItem      String
+  amount        Decimal         @db.Decimal(14, 2)
+
+  engagement  Engagement  @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId, engagementId], references: [id, engagementId], onDelete: Cascade)
+
+  @@unique([id, engagementId])
+  @@index([engagementId])
+  @@index([applicationId, fiscalYear, versionType])
+}
+
+// ─────────────────────── Option lists & audit ───────────────────────
+
+model OptionList {
+  id           String @id @default(cuid())
+  engagementId String
+  key          String // "applicationType", "actionPlanAssignment", ...
+  name         String
+
+  engagement Engagement   @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  items      OptionItem[]
+
+  @@unique([id, engagementId])
+  @@unique([engagementId, key])
+}
+
+model OptionItem {
+  id           String @id @default(cuid())
+  engagementId String
+  optionListId String
+  value        String
+  orderIndex   Int
+
+  engagement Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  list       OptionList @relation(fields: [optionListId, engagementId], references: [id, engagementId], onDelete: Cascade)
+
+  @@unique([id, engagementId])
+  @@unique([optionListId, value])
+  @@index([engagementId])
+}
+
+/// Append-only: the scoped guard rejects update/delete, and the migration
+/// REVOKEs UPDATE/DELETE from the runtime role at the database.
+model AuditEvent {
+  id           String   @id @default(cuid())
+  engagementId String
+  actorUserId  String // clerkUserId or "dev:<name>" — always derived from ctx, never from args
+  actorDisplay String
+  action       String // "weighting.update", "threshold.update", "disposition.override", ...
+  entityType   String
+  entityId     String?
+  before       Json?
+  after        Json?
+  createdAt    DateTime @default(now())
+
+  engagement Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+
+  @@unique([id, engagementId])
+  @@index([engagementId, createdAt])
+}
