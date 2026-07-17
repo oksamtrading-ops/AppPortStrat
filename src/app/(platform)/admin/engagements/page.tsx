@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { createEngagementAction, setEngagementStatusAction } from "./actions";
-import Link from "next/link";
+import { EngagementLink } from "@/components/shell/engagement-link";
 
 export const dynamic = "force-dynamic";
 
@@ -120,9 +120,13 @@ export default async function AdminEngagementsPage() {
                   return (
                     <TableRow key={e.id}>
                       <TableCell>
-                        <Link href={`/e/${e.id}/dashboard`} className="font-medium hover:underline">
+                        <EngagementLink
+                          engagementId={e.id}
+                          clerkOrgId={e.clerkOrgId}
+                          className="font-medium hover:underline"
+                        >
                           {e.name}
-                        </Link>
+                        </EngagementLink>
                       </TableCell>
                       <TableCell>{e.clientName}</TableCell>
                       <TableCell>
