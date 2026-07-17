@@ -9,6 +9,9 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
  */
 const hasDb = Boolean(process.env.DATABASE_URL);
 
+// Hosted Postgres over the network — generous timeouts.
+const SLOW = 120_000;
+
 describe.skipIf(!hasDb)("override persistence through recompute (integration)", () => {
   // Imports are lazy so the suite loads without a DATABASE_URL.
   let cleanup: (() => Promise<void>) | null = null;
@@ -77,11 +80,11 @@ describe.skipIf(!hasDb)("override persistence through recompute (integration)", 
     cleanup = async () => {
       await raw.engagement.delete({ where: { id: engagementId } });
     };
-  });
+  }, SLOW);
 
   afterAll(async () => {
     await cleanup?.();
-  });
+  }, SLOW);
 
   it("stores both computed and override values; override survives threshold change + recompute", async () => {
     const { recomputeEngagement } = await import("@/lib/recompute");
@@ -116,7 +119,7 @@ describe.skipIf(!hasDb)("override persistence through recompute (integration)", 
     expect(override?.justification).toBe("Strategic exit");
     // The filter cascade saw the final (overridden) disposition.
     expect(result?.filterHit).toBe("TERMINATE");
-  });
+  }, SLOW);
 
   it("recompute is idempotent", async () => {
     const { recomputeEngagement } = await import("@/lib/recompute");
@@ -128,5 +131,5 @@ describe.skipIf(!hasDb)("override persistence through recompute (integration)", 
     expect(second?.bvScore).toBe(first?.bvScore);
     expect(second?.computedDisposition).toBe(first?.computedDisposition);
     expect(second?.filterHit).toBe(first?.filterHit);
-  });
+  }, SLOW);
 });

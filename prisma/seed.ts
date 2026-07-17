@@ -7,6 +7,7 @@
  *
  * Run: npm run db:seed   (idempotent — rebuilds the bank at BANK_VERSION)
  */
+import "dotenv/config";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PrismaClient } from "../src/generated/prisma/client";

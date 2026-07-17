@@ -17,7 +17,13 @@ function createClient(): PrismaClient {
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set — copy .env.example to .env and fill it in");
   }
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+  return new PrismaClient({
+    adapter: new PrismaPg({ connectionString }),
+    // Every scoped operation runs inside a batch transaction (RLS set_config +
+    // query); hosted Postgres with cold starts needs generous acquisition
+    // headroom or concurrent snapshot reads spuriously fail.
+    transactionOptions: { maxWait: 15_000, timeout: 30_000 },
+  });
 }
 
 /** Lazily initialized so importing this module without a DB configured is safe. */

@@ -6,6 +6,7 @@
  *
  * Run AFTER npm run db:seed (needs the question bank).
  */
+import "dotenv/config";
 import { resolveAuthMode, readAuthEnv } from "../src/lib/auth/mode";
 import { DEV_USERS } from "../src/lib/auth/dev";
 import { createEngagementWithConfig } from "../src/lib/db/provision";

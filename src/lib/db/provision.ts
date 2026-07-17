@@ -41,6 +41,8 @@ export async function createEngagementWithConfig(params: CreateEngagementParams)
 
     // 1. Clone the survey templates/questions/anchors from the global bank
     //    (always — the question set is methodology, not configuration).
+    //    Batched (createManyAndReturn) — row-by-row creates blow the
+    //    transaction timeout on pooled hosted Postgres.
     const bankTemplates = await tx.bankTemplate.findMany({
       include: { questions: { include: { anchors: true }, orderBy: { orderIndex: "asc" } } },
     });
@@ -54,33 +56,36 @@ export async function createEngagementWithConfig(params: CreateEngagementParams)
           bankVersion: bank.bankVersion,
         },
       });
-      for (const q of bank.questions) {
-        const question = await tx.surveyQuestion.create({
-          data: {
-            engagementId: engagement.id,
-            templateId: template.id,
-            code: q.code,
-            section: q.section,
-            text: q.text,
-            description: q.description,
-            orderIndex: q.orderIndex,
-            scoreFamily: q.scoreFamily,
-            answerKind: q.answerKind,
-            optionListKey: q.optionListKey,
-            legacyRef: q.legacyRef,
-          },
-        });
-        questionIdByCode.set(q.code, question.id);
-        if (q.anchors.length > 0) {
-          await tx.guidelineAnchor.createMany({
-            data: q.anchors.map((a) => ({
-              engagementId: engagement.id,
-              questionId: question.id,
-              value: a.value,
-              text: a.text,
-            })),
-          });
-        }
+      if (bank.questions.length === 0) continue;
+
+      const created = await tx.surveyQuestion.createManyAndReturn({
+        data: bank.questions.map((q) => ({
+          engagementId: engagement.id,
+          templateId: template.id,
+          code: q.code,
+          section: q.section,
+          text: q.text,
+          description: q.description,
+          orderIndex: q.orderIndex,
+          scoreFamily: q.scoreFamily,
+          answerKind: q.answerKind,
+          optionListKey: q.optionListKey,
+          legacyRef: q.legacyRef,
+        })),
+        select: { id: true, code: true },
+      });
+      for (const q of created) questionIdByCode.set(q.code, q.id);
+
+      const anchorRows = bank.questions.flatMap((q) =>
+        q.anchors.map((a) => ({
+          engagementId: engagement.id,
+          questionId: questionIdByCode.get(q.code)!,
+          value: a.value,
+          text: a.text,
+        })),
+      );
+      if (anchorRows.length > 0) {
+        await tx.guidelineAnchor.createMany({ data: anchorRows });
       }
     }
 
@@ -105,20 +110,19 @@ export async function createEngagementWithConfig(params: CreateEngagementParams)
       await tx.thresholdConfig.create({ data: { engagementId: engagement.id, ...THRESHOLD_DEFAULTS } });
 
       for (const list of DEFAULT_OPTION_LISTS) {
-        await tx.optionList.create({
-          data: {
-            engagementId: engagement.id,
-            key: list.key,
-            name: list.name,
-            items: {
-              create: list.values.map((value, orderIndex) => ({
-                engagementId: engagement.id,
-                value,
-                orderIndex,
-              })),
-            },
-          },
+        const created = await tx.optionList.create({
+          data: { engagementId: engagement.id, key: list.key, name: list.name },
         });
+        if (list.values.length > 0) {
+          await tx.optionItem.createMany({
+            data: list.values.map((value, orderIndex) => ({
+              engagementId: engagement.id,
+              optionListId: created.id,
+              value,
+              orderIndex,
+            })),
+          });
+        }
       }
     } else {
       const sourceId = params.source.sourceEngagementId;
@@ -156,20 +160,19 @@ export async function createEngagementWithConfig(params: CreateEngagementParams)
         include: { items: { orderBy: { orderIndex: "asc" } } },
       });
       for (const list of sourceLists) {
-        await tx.optionList.create({
-          data: {
-            engagementId: engagement.id,
-            key: list.key,
-            name: list.name,
-            items: {
-              create: list.items.map((item) => ({
-                engagementId: engagement.id,
-                value: item.value,
-                orderIndex: item.orderIndex,
-              })),
-            },
-          },
+        const created = await tx.optionList.create({
+          data: { engagementId: engagement.id, key: list.key, name: list.name },
         });
+        if (list.items.length > 0) {
+          await tx.optionItem.createMany({
+            data: list.items.map((item) => ({
+              engagementId: engagement.id,
+              optionListId: created.id,
+              value: item.value,
+              orderIndex: item.orderIndex,
+            })),
+          });
+        }
       }
 
       // Capability tree: L0 → L1 → L2, remapping parent ids level by level.
@@ -192,5 +195,8 @@ export async function createEngagementWithConfig(params: CreateEngagementParams)
     }
 
     return engagement;
-  });
+  },
+  // Hosted Postgres with cold starts: generous headroom for connection
+  // acquisition (maxWait) and the provisioning work itself (timeout).
+  { maxWait: 15_000, timeout: 30_000 });
 }

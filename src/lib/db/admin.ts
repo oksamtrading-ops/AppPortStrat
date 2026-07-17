@@ -76,7 +76,7 @@ export async function persistPortfolioResults(
 
       return { configVersion: engagement.configVersion };
     },
-    { timeout: 15_000 },
+    { maxWait: 10_000, timeout: 15_000 },
   );
 }
 
