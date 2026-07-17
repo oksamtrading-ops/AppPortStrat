@@ -1,0 +1,513 @@
+{
+  "it": [
+    {
+      "row": 10,
+      "section": "Technical Competence",
+      "name": "Availability",
+      "description": "Rate the application's availability based on expected performance level",
+      "anchors": {
+        "1": "Inconsistent availability and/or performance level",
+        "2": "Between 1 and 3",
+        "3": "Mostly available when needed; performance level may vary",
+        "4": "Between 3 and 5",
+        "5": "Always available when needed, and at the expected performance level"
+      }
+    },
+    {
+      "row": 11,
+      "section": "Technical Competence",
+      "name": "Support Complexity",
+      "description": "Relative to other applications, how much of the total application maintenance resource dollars are required to support this application",
+      "anchors": {
+        "1": "Significantly more",
+        "2": "Between 1 and 3",
+        "3": "Average",
+        "4": "Between 3 and 5",
+        "5": "Significantly less"
+      }
+    },
+    {
+      "row": 12,
+      "section": "Technical Competence",
+      "name": "Support Volume",
+      "description": "Average number of support calls received by staff each week",
+      "anchors": {
+        "1": ">10 calls per month",
+        "2": "Between 5 and 10 calls per month",
+        "3": "5 calls per month",
+        "4": "Between 1 and 5 calls per month",
+        "5": "<1 call per month"
+      }
+    },
+    {
+      "row": 13,
+      "section": "Technical Competence",
+      "name": "Technical Capability",
+      "description": "The technical capability of the application depends on the language used, integration to other applications, compliance, security, etc",
+      "anchors": {
+        "1": "Very limited; aging platform",
+        "2": "Low",
+        "3": "Medium",
+        "4": "Good",
+        "5": "State of the art"
+      }
+    },
+    {
+      "row": 14,
+      "section": "Technical Competence",
+      "name": "Ability to Upgrade",
+      "description": "Ability to upgrade the application",
+      "anchors": {
+        "1": "Very low. Will be costly and cause significant challenges",
+        "2": "Low",
+        "3": "Medium. Doable but not trivial",
+        "4": "Good",
+        "5": "High. No issue"
+      }
+    },
+    {
+      "row": 15,
+      "section": "Technical Competence",
+      "name": "SLA Compliance",
+      "description": "Does the application meet maintenance SLA's",
+      "anchors": {
+        "1": "No SLA exists",
+        "2": "Does not meet expectations",
+        "3": "Meets some expectations",
+        "4": "Meets most expectations",
+        "5": "Fully meets expectations"
+      }
+    },
+    {
+      "row": 16,
+      "section": "Technical Competence",
+      "name": "Application Stability",
+      "description": "Number of Incident/Problem/Change Request tickets submitted for each application",
+      "anchors": {
+        "1": ">10 tickets per month",
+        "2": "between 5 and 10 tickets per month",
+        "3": "5 tickets per month",
+        "4": "between 1 and 5 tickets per month",
+        "5": "<1 ticket per month"
+      }
+    },
+    {
+      "row": 17,
+      "section": "Technical Competence",
+      "name": "Disaster Recovery Capability",
+      "description": "Rate the department's technical ability to recover from application failure",
+      "anchors": {
+        "1": "No disaster recovery plan required.",
+        "2": "No disaster recovery plan defined or in place",
+        "3": "Disaster recovery plan documented but not tested",
+        "4": "Disaster recovery plan not documented but tested",
+        "5": "Formal disaster recovery plan in place, documented and tested"
+      }
+    },
+    {
+      "row": 18,
+      "section": "Technical Competence",
+      "name": "Scalability",
+      "description": "Can the application scale to support increasing business needs. (i.e. multiple lines or markets, additional products or users)",
+      "anchors": {
+        "1": "Not at all. Already reaching limitations",
+        "2": "Limited scalability opportunity; will reach limitations fairly soon",
+        "3": "Somehow scalable. Will reach limitations in the short-term",
+        "4": "Scalable and appropriate for long term",
+        "5": "Highly scalable. No anticipated limitations"
+      }
+    },
+    {
+      "row": 19,
+      "section": "Technical Competence",
+      "name": "Adaptability / Extensibility",
+      "description": "Rate the application's flexibility to easily accommodate changes in business rules and processes and/or the ease of adding additional processes and services",
+      "anchors": {
+        "1": "Does not have the flexibility to support additional processes or services",
+        "2": "Has the flexibility to support minimal additional processes or services",
+        "3": "Has the flexibility to support additional basic processes or services",
+        "4": "Has the flexibility to support the majority of additional processes or services",
+        "5": "Has the flexibility to support all envisioned additional processes or services"
+      }
+    },
+    {
+      "row": 20,
+      "section": "Technical Competence",
+      "name": "Portability",
+      "description": "Rate the application's capability to migrate functionality to an alternative software product or hardware platform",
+      "anchors": {
+        "1": "Low.  The application is rigidly structured to the existing platform",
+        "2": "Low-Medium",
+        "3": "Medium.  Components of the application have the flexibility to be migrated to other platforms",
+        "4": "Medium-High",
+        "5": "High.  The application supports multiple technical platforms and can be readily migrated"
+      }
+    },
+    {
+      "row": 21,
+      "section": "Technical Competence",
+      "name": "Quality",
+      "description": "Rate the level at which the application runs consistently and produces accurate results with low to zero defects",
+      "anchors": {
+        "1": "Low. Results are inconsistent and not deemed reliable",
+        "2": "Low-Medium",
+        "3": "Medium. Results are sometimes inaccurate or include defects",
+        "4": "Medium-High",
+        "5": "High.  Results are consistently accurate and of high quality"
+      }
+    },
+    {
+      "row": 22,
+      "section": "Technical Competence",
+      "name": "Performance",
+      "description": "Rate the application's user response time, process turnaround, and batch timeliness against business expectations",
+      "anchors": {
+        "1": "Low. Performance is unacceptable and does not meet business requirements",
+        "2": "Performance is inconsistent and sometimes meets buisness requirements",
+        "3": "Medium. Performance meets business expectations",
+        "4": "Performance meets buisness requirements and is consisent",
+        "5": "High. Performance exceeds business expectations"
+      }
+    },
+    {
+      "row": 23,
+      "section": "Technical Competence",
+      "name": "Maintainability",
+      "description": "Rate how well the application is documented and understood by the support team",
+      "anchors": {
+        "1": "Low. Operating documentation does not exist and the level of knowledge within the support team is low",
+        "2": "Some kind of documentation and support team knowledge exists",
+        "3": "Medium. Some operating documentation exists and general support knowledge is prevalent",
+        "4": "Operating documentation exists for the application and but not for all its components.  Support staff have a good understanding of the application",
+        "5": "High. Operating documentation exists for the application and all its components.  Support staff have a deep understanding of the application"
+      }
+    },
+    {
+      "row": 26,
+      "section": "Architecture / Infrastructure",
+      "name": "Complexity",
+      "description": "Select the category that best describes the application's level of complexity based on integration with other applications",
+      "anchors": {
+        "1": "High / External integration",
+        "2": "Between 1 and 3",
+        "3": "Medium / Internal integration",
+        "4": "Between 3 and 5",
+        "5": "Limited / Standard Technology"
+      }
+    },
+    {
+      "row": 27,
+      "section": "Architecture / Infrastructure",
+      "name": "Reusability",
+      "description": "Extent to which the application architecture structure allows it to be accessed or used by other applications. (i.e. service enabled)",
+      "anchors": {
+        "1": "None.  The application is not structured to support a services architecture",
+        "2": "Supports the sharing of minimal functionalities with other applications",
+        "3": "Medium.  The applications uses a mixture of services and point to point interfaces to provide information to other applications",
+        "4": "Supports the sharing of majority of the functionalities with other applications",
+        "5": "High.  The application is fully service oriented"
+      }
+    },
+    {
+      "row": 28,
+      "section": "Architecture / Infrastructure",
+      "name": "Adherence to Enterprise Architecture Standards",
+      "description": "Select the category that best describes the application's alignment to current enterprise architecture standards",
+      "anchors": {
+        "1": "Application alignment to Corporate technology standards is unknown",
+        "2": "The application is not aligned with current Corporate technology standards",
+        "3": "The application is aligned with a minimal number of current Corporate technology standards",
+        "4": "The application is aligned with the majority of current Corporate technology standards",
+        "5": "The application is fully aligned with current Corporate technology standards"
+      }
+    },
+    {
+      "row": 31,
+      "section": "Technical Risk",
+      "name": "Disaster Recovery Criticality",
+      "description": "IT perceived importance of the application from a business point of view",
+      "anchors": {
+        "1": "Not known or non-sensitive",
+        "2": "Sensitive",
+        "3": "Non-Critical",
+        "4": "Critical",
+        "5": "Vital"
+      }
+    },
+    {
+      "row": 32,
+      "section": "Technical Risk",
+      "name": "Vendor Support - Database",
+      "description": "Rate the risk of discontinued vendor support for this application's current database version",
+      "anchors": {
+        "1": "Vendor does not support the Department's version of the application",
+        "2": "Between 1 and 3",
+        "3": "Version of application is nearing the end of its support life cycle",
+        "4": "Between 3 and 5",
+        "5": "Application creates little or no risk.  Version of application are fully supported by vendor"
+      }
+    },
+    {
+      "row": 33,
+      "section": "Technical Risk",
+      "name": "Vendor Support - Platform",
+      "description": "Rate the risk of discontinued vendor  support for this application's current platform. (i.e. operating system, language, core application)",
+      "anchors": {
+        "1": "Vendor does not support the Department's version of the application",
+        "2": "Between 1 and 3",
+        "3": "Version of application is nearing the end of its support life cycle",
+        "4": "Between 3 and 5",
+        "5": "Application creates little or no risk.  Version of application are fully supported by vendor"
+      }
+    },
+    {
+      "row": 34,
+      "section": "Technical Risk",
+      "name": "Vendor Support - Integration",
+      "description": "Rate the risk of discontinued vendor support for this application's integration components. (i.e. WebSphere, IIS, TIBCO)",
+      "anchors": {
+        "1": "Vendor does not support the Department's version of the application",
+        "2": "Between 1 and 3",
+        "3": "Version of application is nearing the end of its support life cycle",
+        "4": "Between 3 and 5",
+        "5": "Application creates little or no risk.  Version of application are fully supported by vendor"
+      }
+    },
+    {
+      "row": 35,
+      "section": "Technical Risk",
+      "name": "Security Current State",
+      "description": "Ability to meet security policy and directives. (i.e. the extent to which the application is secured from unauthorized access and users are recognized and not permitted to access unauthorized functions)",
+      "anchors": {
+        "1": "Does not meet security policy; high exposure for security risk",
+        "2": "Hardly meets security policy; major gaps",
+        "3": "Partially meets security policy; manageable exposure for security risk",
+        "4": "Meets most of security policy; few gaps",
+        "5": "Fully meets security policy; little or no security exposure"
+      }
+    },
+    {
+      "row": 36,
+      "section": "Technical Risk",
+      "name": "Capacity Constraint",
+      "description": "Rate the required lead time to meet capacity changes for the application  (i.e. adding hardware or software components)",
+      "anchors": {
+        "1": "Unable to or can hardly meet capacity requirements",
+        "2": "High.  Capacity changes require more than 6 months",
+        "3": "Medium. Capacity changes require 3 to 6 months",
+        "4": "Low. Capacity changes require 1 to 3 months",
+        "5": "Capacity is readily available on demand"
+      }
+    },
+    {
+      "row": 37,
+      "section": "Technical Risk",
+      "name": "Dependence on Specialized/ Limited Technical Knowledge",
+      "description": "Select the potential exposure to the business due to the need for specialized technology skill sets",
+      "anchors": {
+        "1": "Very specialized skill set",
+        "2": "Some special training required",
+        "3": "Unique skill or knowledge",
+        "4": "Standard skill set",
+        "5": "Skill set readily available"
+      }
+    },
+    {
+      "row": 46,
+      "section": "Non-Report Related Questions",
+      "name": "Business Criticality",
+      "description": "IT perceived importance of the application from a business point of view",
+      "anchors": {
+        "1": "Non-critical",
+        "2": "Normal",
+        "3": "Somewhat critical",
+        "4": "Critical",
+        "5": "Mission-critical"
+      }
+    },
+    {
+      "row": 47,
+      "section": "Non-Report Related Questions",
+      "name": "Data Sensitivity",
+      "description": "IT perceived importance of the application data from a business point of view",
+      "anchors": {
+        "1": "Non-critical",
+        "2": "Normal",
+        "3": "Somewhat critical",
+        "4": "Critical",
+        "5": "Mission-critical"
+      }
+    },
+    {
+      "row": 48,
+      "section": "Non-Report Related Questions",
+      "name": "Supports Multiple Businesses",
+      "description": "Provide the number of businesses that the application supports",
+      "anchors": {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5 and more"
+      }
+    },
+    {
+      "row": 49,
+      "section": "Non-Report Related Questions",
+      "name": "Alignment with Strategic IT Plan",
+      "description": "Rate the application's level of alignment with strategic IT plan (i.e. technology platforms, standards, architecture, skills, etc.)",
+      "anchors": {
+        "1": "Low alignment with strategic IT plan",
+        "2": "Between 1 and 3",
+        "3": "Medium alignment with strategic IT plan",
+        "4": "Between 3 and 5",
+        "5": "High alignment with strategic IT plan"
+      }
+    }
+  ],
+  "business": [
+    {
+      "row": 11,
+      "section": "Business Strategic Importance",
+      "name": "Business Units Using The Application",
+      "description": "List the number of business segments using this application",
+      "anchors": {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5 or more business units"
+      }
+    },
+    {
+      "row": 12,
+      "section": "Business Strategic Importance",
+      "name": "Functional Alignment with Strategic Business Plan",
+      "description": "Rate the application's level of alignment with strategic business plan",
+      "anchors": {
+        "1": "Low alignment with strategic business plan",
+        "2": "Between 1 and 3",
+        "3": "Medium alignment with strategic business plan",
+        "4": "Between 3 and 5",
+        "5": "High alignment with strategic business plan"
+      }
+    },
+    {
+      "row": 13,
+      "section": "Business Strategic Importance",
+      "name": "Importance for Business Units' Programs and Objectives",
+      "description": "Rate the importance of the application for achieving the business units' strategy and program priorities",
+      "anchors": {
+        "1": "Not critical",
+        "2": "Normal",
+        "3": "Somewhat critical",
+        "4": "Critical",
+        "5": "Mission-critical"
+      }
+    },
+    {
+      "row": 14,
+      "section": "Business Strategic Importance",
+      "name": "Business Value of the Application",
+      "description": "Rate the value of the application to the business",
+      "anchors": {
+        "1": "Low",
+        "2": "Low to Medium",
+        "3": "Medium",
+        "4": "Medium to High",
+        "5": "High"
+      }
+    },
+    {
+      "row": 15,
+      "section": "Business Strategic Importance",
+      "name": "Purpose of the Application",
+      "description": "Please select the main purpose or function for the application",
+      "anchors": {
+        "1": "Utility / Administrative Support",
+        "2": "Key back-office",
+        "3": "Key to run the business",
+        "4": "Key customer facing application",
+        "5": "Strategic Program / Competitive Advantage"
+      }
+    },
+    {
+      "row": 18,
+      "section": "Operations",
+      "name": "Owner Satisfaction",
+      "description": "Rate the owner satisfaction with this application",
+      "anchors": {
+        "1": "Dissatisfied.",
+        "2": "Needs significant work",
+        "3": "Mostly satisfied",
+        "4": "Very satisfied",
+        "5": "Extremely satisfied"
+      }
+    },
+    {
+      "row": 19,
+      "section": "Operations",
+      "name": "User Interface",
+      "description": "Rate the application's ease of use",
+      "anchors": {
+        "1": "Not at all intuitive - New users require formal training",
+        "2": "Between 1 and 3",
+        "3": "Some what intuitive - New users require minimal training",
+        "4": "Between 3 and 5",
+        "5": "Very intuitive - New users require little or no training"
+      }
+    },
+    {
+      "row": 20,
+      "section": "Operations",
+      "name": "User Satisfaction",
+      "description": "Rate the user satisfaction with this application",
+      "anchors": {
+        "1": "Dissatisfied.",
+        "2": "Needs significant work",
+        "3": "Mostly satisfied",
+        "4": "Very satisfied",
+        "5": "Extremely satisfied"
+      }
+    },
+    {
+      "row": 21,
+      "section": "Operations",
+      "name": "Business Capabilities",
+      "description": "Rate the effectiveness of the application's ability to support required business capabilities",
+      "anchors": {
+        "1": "Does not support business  capability requirements",
+        "2": "Supports a minimal number of business  capability requirements",
+        "3": "Supports some, but not all, business  capability requirements",
+        "4": "Supports a majority, but not all business  capability requirements",
+        "5": "Fully supports business  capability requirements"
+      }
+    },
+    {
+      "row": 22,
+      "section": "Operations",
+      "name": "Ability to Meet Known Future Requirements",
+      "description": "Rate how well the application meets the business's known future (1yr - 3 yr) requirements",
+      "anchors": {
+        "1": "Does not meet known future requirements",
+        "2": "Meets a minimal set of known  future requirements",
+        "3": "Meets some but not all known future requirements",
+        "4": "Meets a majority of known future requirements",
+        "5": "Meets known future requirements"
+      }
+    },
+    {
+      "row": 23,
+      "section": "Operations",
+      "name": "Support of Operational Efficiency",
+      "description": "Rate how the current application provides operational efficiency",
+      "anchors": {
+        "1": "Does not provide any operational efficiency",
+        "2": "Provide limited operational efficiency across few areas",
+        "3": "Provide some operational efficiency across some areas",
+        "4": "Provide operational efficiency across most areas",
+        "5": "Provide strong operational efficiency across all areas"
+      }
+    }
+  ]
+}
