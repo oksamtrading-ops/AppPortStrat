@@ -36,3 +36,40 @@ export async function findMembership(engagementId: string, params: { clerkUserId
   if (or.length === 0) return null;
   return adminDb().membership.findFirst({ where: { engagementId, OR: or } });
 }
+
+/**
+ * Convergent membership sync from a verified Clerk membership list (webhook).
+ * Upserts every current member, removes rows whose clerkUserId is no longer
+ * in the org (email-invite rows with no clerkUserId yet are left alone).
+ */
+export async function reconcileMemberships(
+  clerkOrgId: string,
+  members: Array<{ clerkUserId: string; email: string; displayName: string | null; role: "ENGAGEMENT_LEAD" | "CONSULTANT" | "CLIENT_RESPONDENT" | "CLIENT_VIEWER" }>,
+): Promise<{ engagementId: string; upserted: number; removed: number } | { skipped: string }> {
+  const db = adminDb();
+  const engagement = await db.engagement.findUnique({ where: { clerkOrgId } });
+  if (!engagement) return { skipped: "no engagement bound to this organization" };
+
+  let upserted = 0;
+  for (const member of members) {
+    await db.membership.upsert({
+      where: { engagementId_clerkUserId: { engagementId: engagement.id, clerkUserId: member.clerkUserId } },
+      create: {
+        engagementId: engagement.id,
+        clerkUserId: member.clerkUserId,
+        email: member.email,
+        displayName: member.displayName,
+        role: member.role,
+      },
+      update: { email: member.email, displayName: member.displayName, role: member.role },
+    });
+    upserted += 1;
+  }
+
+  const currentIds = members.map((m) => m.clerkUserId);
+  const { count: removed } = await db.membership.deleteMany({
+    where: { engagementId: engagement.id, clerkUserId: { notIn: currentIds, not: null } },
+  });
+
+  return { engagementId: engagement.id, upserted, removed };
+}
