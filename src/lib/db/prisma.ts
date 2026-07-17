@@ -18,7 +18,15 @@ function createClient(): PrismaClient {
     throw new Error("DATABASE_URL is not set — copy .env.example to .env and fill it in");
   }
   return new PrismaClient({
-    adapter: new PrismaPg({ connectionString }),
+    // Pool tuned for serverless Postgres (Neon): drop idle sockets before the
+    // server severs them (ECONNRESET), keep TCP alive, allow slow cold starts.
+    adapter: new PrismaPg({
+      connectionString,
+      max: 5,
+      idleTimeoutMillis: 10_000,
+      connectionTimeoutMillis: 15_000,
+      keepAlive: true,
+    }),
     // Every scoped operation runs inside a batch transaction (RLS set_config +
     // query); hosted Postgres with cold starts needs generous acquisition
     // headroom or concurrent snapshot reads spuriously fail.
