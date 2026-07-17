@@ -5,10 +5,79 @@
  * Only src/lib/auth/**, src/lib/recompute.ts, admin routes, and seeds may
  * import this module — enforced by ESLint.
  */
+import { randomUUID } from "node:crypto";
 import { getRawPrisma } from "./prisma";
+import { Prisma } from "@/generated/prisma/client";
+import type { PerAppResult } from "@/lib/methodology";
 
 export function adminDb() {
   return getRawPrisma();
+}
+
+/**
+ * THE one sanctioned raw statement: bulk-persist computed portfolio results.
+ * - Serialized per engagement via pg_advisory_xact_lock (concurrent config
+ *   saves cannot interleave).
+ * - Touches ONLY computed columns — authored data (DispositionOverride) lives
+ *   in its own table and can never be destroyed by a recompute.
+ * - Short write-only transaction: the snapshot read and the pure computation
+ *   happen before this is called.
+ */
+export async function persistPortfolioResults(
+  engagementId: string,
+  results: PerAppResult[],
+  opts: { bumpConfigVersion: boolean },
+): Promise<{ configVersion: number }> {
+  const db = getRawPrisma();
+
+  return db.$transaction(
+    async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${engagementId}))`;
+
+      const engagement = opts.bumpConfigVersion
+        ? await tx.engagement.update({
+            where: { id: engagementId },
+            data: { configVersion: { increment: 1 } },
+            select: { configVersion: true },
+          })
+        : await tx.engagement.findUniqueOrThrow({
+            where: { id: engagementId },
+            select: { configVersion: true },
+          });
+
+      if (results.length > 0) {
+        const rows = Prisma.join(
+          results.map(
+            (r) =>
+              Prisma.sql`(${randomUUID()}, ${engagementId}, ${r.applicationId}, ${r.itScore}, ${r.bvScore}, ${r.itPartial}, ${r.bvPartial}, ${r.itNonReportScore}, ${r.financialScore}, ${r.computedDisposition}::"Disposition", ${r.filterHit}::"FilterHit", ${r.analysisCandidate}, ${r.veryLowBv}, ${r.veryLowIt}, ${engagement.configVersion}, now())`,
+          ),
+        );
+        await tx.$executeRaw`
+          INSERT INTO "DispositionResult"
+            ("id", "engagementId", "applicationId", "itScore", "bvScore", "itPartial", "bvPartial",
+             "itNonReportScore", "financialScore", "computedDisposition", "filterHit",
+             "analysisCandidate", "veryLowBv", "veryLowIt", "configVersion", "computedAt")
+          VALUES ${rows}
+          ON CONFLICT ("applicationId", "engagementId") DO UPDATE SET
+            "itScore" = EXCLUDED."itScore",
+            "bvScore" = EXCLUDED."bvScore",
+            "itPartial" = EXCLUDED."itPartial",
+            "bvPartial" = EXCLUDED."bvPartial",
+            "itNonReportScore" = EXCLUDED."itNonReportScore",
+            "financialScore" = EXCLUDED."financialScore",
+            "computedDisposition" = EXCLUDED."computedDisposition",
+            "filterHit" = EXCLUDED."filterHit",
+            "analysisCandidate" = EXCLUDED."analysisCandidate",
+            "veryLowBv" = EXCLUDED."veryLowBv",
+            "veryLowIt" = EXCLUDED."veryLowIt",
+            "configVersion" = EXCLUDED."configVersion",
+            "computedAt" = EXCLUDED."computedAt"`;
+      }
+
+      return { configVersion: engagement.configVersion };
+    },
+    { timeout: 15_000 },
+  );
 }
 
 /** Engagement lookup for context resolution (pre-scoping, by necessity). */

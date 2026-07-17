@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { OverrideEditor } from "./override-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export default async function ApplicationsPage({ params }: { params: Promise<{ e
             <TableHead>Disposition</TableHead>
             <TableHead>Filter status</TableHead>
             <TableHead>Flags</TableHead>
+            {ctx.role === "ENGAGEMENT_LEAD" && !ctx.readOnly ? <TableHead /> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -90,6 +92,19 @@ export default async function ApplicationsPage({ params }: { params: Promise<{ e
                     .filter(Boolean)
                     .join(" · ")}
                 </TableCell>
+                {ctx.role === "ENGAGEMENT_LEAD" && !ctx.readOnly ? (
+                  <TableCell>
+                    <OverrideEditor
+                      engagementId={engagementId}
+                      applicationId={app.id}
+                      current={
+                        app.override
+                          ? { disposition: app.override.disposition, justification: app.override.justification }
+                          : null
+                      }
+                    />
+                  </TableCell>
+                ) : null}
               </TableRow>
             );
           })}
