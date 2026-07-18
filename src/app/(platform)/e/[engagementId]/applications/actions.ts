@@ -52,7 +52,8 @@ export async function saveApplication(input: ApplicationInput) {
     if (!node) throw new Error("Unknown capability node");
   }
 
-  const { engagementId: _e, applicationId, ...fields } = parsed;
+  const { engagementId: _ignored, applicationId, ...fields } = parsed;
+  void _ignored;
   const data = { ...fields, meetsFutureState: parsed.meetsFutureState ?? null, capabilityNodeId: parsed.capabilityNodeId ?? null };
 
   let id: string;
