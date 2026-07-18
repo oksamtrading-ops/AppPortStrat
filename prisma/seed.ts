@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const BANK_VERSION = 1;
+const BANK_VERSION = 2;
 
 interface ExtractedQuestion {
   row: number;
@@ -21,6 +21,12 @@ interface ExtractedQuestion {
   name: string;
   description: string | null;
   anchors: Record<string, string | null>;
+}
+
+interface FieldRow {
+  row: number;
+  section: string;
+  name: string;
 }
 
 interface QuestionContent {
@@ -82,19 +88,86 @@ async function main() {
   const content: QuestionContent = JSON.parse(
     readFileSync(join(__dirname, "seed-data", "question-content.json"), "utf8"),
   );
+  const demFin: { demographics: FieldRow[]; finance: FieldRow[] } = JSON.parse(
+    readFileSync(join(__dirname, "seed-data", "demographics-finance.json"), "utf8"),
+  );
 
-  const templates: Array<{
-    type: "IT_HEALTH" | "BUSINESS_VALUE" | "DEMOGRAPHICS" | "FINANCE";
-    name: string;
-    sheet: string;
-    questions: ExtractedQuestion[];
-    codes: Record<number, string>;
-  }> = [
-    { type: "IT_HEALTH", name: "IT Health Survey", sheet: "IT", questions: content.it, codes: IT_CODES },
-    { type: "BUSINESS_VALUE", name: "Business Value Survey", sheet: "Business", questions: content.business, codes: BV_CODES },
-    // Question sets for these two land in Phase 3 (Demographics 119 fields, Finance line items).
-    { type: "DEMOGRAPHICS", name: "Demographics Survey", sheet: "Demographics", questions: [], codes: {} },
-    { type: "FINANCE", name: "Finance Survey", sheet: "Finance", questions: [], codes: {} },
+  interface BankQuestionSeed {
+    code: string;
+    section: string;
+    text: string;
+    description: string | null;
+    scoreFamily: "BUSINESS" | "IT" | "IT_NON_REPORT" | "NONE";
+    answerKind: "SCORE_1_5" | "TEXT" | "NUMBER" | "CURRENCY" | "DATE" | "BOOLEAN" | "OPTION";
+    optionListKey: string | null;
+    legacyRef: string;
+    anchors: Array<{ value: number; text: string }>;
+  }
+
+  function scored(sheet: string, codes: Record<number, string>, family: "BUSINESS" | "IT") {
+    return (q: ExtractedQuestion): BankQuestionSeed => {
+      const code = codes[q.row];
+      if (!code) throw new Error(`No code mapping for ${sheet} row ${q.row} (${q.name})`);
+      return {
+        code,
+        section: q.section,
+        text: q.name,
+        description: q.description,
+        scoreFamily: family === "IT" && code.startsWith("IT_NR_") ? "IT_NON_REPORT" : family,
+        answerKind: "SCORE_1_5",
+        optionListKey: null,
+        legacyRef: `${sheet}!row${q.row}`,
+        anchors: [1, 2, 3, 4, 5]
+          .map((value): { value: number; text: string | null } => ({ value, text: q.anchors[String(value)] ?? null }))
+          .filter((a): a is { value: number; text: string } => a.text !== null),
+      };
+    };
+  }
+
+  /** Demographics answer kinds follow the workbook's actual validations (inventory §2.5). */
+  function demographicsKind(row: number): { answerKind: BankQuestionSeed["answerKind"]; optionListKey: string | null } {
+    if ((row >= 29 && row <= 60) || (row >= 121 && row <= 136)) return { answerKind: "BOOLEAN", optionListKey: null }; // Yes/No blocks
+    if (row === 69) return { answerKind: "OPTION", optionListKey: "customization" };
+    if (row === 84) return { answerKind: "OPTION", optionListKey: "applicationSize" };
+    return { answerKind: "TEXT", optionListKey: null };
+  }
+
+  const templates: Array<{ type: "IT_HEALTH" | "BUSINESS_VALUE" | "DEMOGRAPHICS" | "FINANCE"; name: string; questions: BankQuestionSeed[] }> = [
+    { type: "IT_HEALTH", name: "IT Health Survey", questions: content.it.map(scored("IT", IT_CODES, "IT")) },
+    {
+      type: "BUSINESS_VALUE",
+      name: "Business Value Survey",
+      questions: content.business.map(scored("Business", BV_CODES, "BUSINESS")),
+    },
+    {
+      type: "DEMOGRAPHICS",
+      name: "Demographics Survey",
+      questions: demFin.demographics.map((f) => ({
+        code: `DEM_R${String(f.row).padStart(3, "0")}`,
+        section: f.section,
+        text: f.name,
+        description: null,
+        scoreFamily: "NONE" as const,
+        ...demographicsKind(f.row),
+        legacyRef: `Demographics!row${f.row}`,
+        anchors: [],
+      })),
+    },
+    {
+      type: "FINANCE",
+      name: "Finance Survey",
+      questions: demFin.finance.map((f) => ({
+        code: `FIN_R${String(f.row).padStart(3, "0")}`,
+        section: f.section,
+        text: f.name,
+        description: null,
+        scoreFamily: "NONE" as const,
+        answerKind: f.section === "Comments" ? ("TEXT" as const) : ("CURRENCY" as const),
+        optionListKey: null,
+        legacyRef: `Finance!row${f.row}`,
+        anchors: [],
+      })),
+    },
   ];
 
   for (const t of templates) {
@@ -104,37 +177,29 @@ async function main() {
       update: { name: t.name, bankVersion: BANK_VERSION },
     });
 
-    if (t.questions.length === 0) continue;
-
     // Idempotent rebuild of the bank's question set at this version.
     await prisma.bankQuestion.deleteMany({ where: { templateId: template.id } });
 
     let orderIndex = 0;
     for (const q of t.questions) {
-      const code = t.codes[q.row];
-      if (!code) throw new Error(`No code mapping for ${t.sheet} row ${q.row} (${q.name})`);
-      const scoreFamily =
-        t.type === "BUSINESS_VALUE" ? "BUSINESS" : code.startsWith("IT_NR_") ? "IT_NON_REPORT" : "IT";
-
       const question = await prisma.bankQuestion.create({
         data: {
           templateId: template.id,
-          code,
+          code: q.code,
           section: q.section,
-          text: q.name,
+          text: q.text,
           description: q.description,
           orderIndex: orderIndex++,
-          scoreFamily,
-          answerKind: "SCORE_1_5",
-          legacyRef: `${t.sheet}!row${q.row}`,
+          scoreFamily: q.scoreFamily,
+          answerKind: q.answerKind,
+          optionListKey: q.optionListKey,
+          legacyRef: q.legacyRef,
         },
       });
-
-      for (const value of [1, 2, 3, 4, 5] as const) {
-        const text = q.anchors[String(value)];
-        if (text) {
-          await prisma.bankAnchor.create({ data: { questionId: question.id, value, text } });
-        }
+      if (q.anchors.length > 0) {
+        await prisma.bankAnchor.createMany({
+          data: q.anchors.map((a) => ({ questionId: question.id, value: a.value, text: a.text })),
+        });
       }
     }
     console.log(`Seeded ${t.type}: ${t.questions.length} questions`);

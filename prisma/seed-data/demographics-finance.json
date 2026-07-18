@@ -1,0 +1,721 @@
+{
+  "demographics": [
+    {
+      "row": 14,
+      "section": "General Information",
+      "name": "IT Owner"
+    },
+    {
+      "row": 15,
+      "section": "General Information",
+      "name": "App Administrator"
+    },
+    {
+      "row": 16,
+      "section": "General Information",
+      "name": "App Developer"
+    },
+    {
+      "row": 17,
+      "section": "General Information",
+      "name": "App SME"
+    },
+    {
+      "row": 18,
+      "section": "General Information",
+      "name": "Participant's Name (IT)"
+    },
+    {
+      "row": 19,
+      "section": "General Information",
+      "name": "Participant's Name (Business)"
+    },
+    {
+      "row": 20,
+      "section": "General Information",
+      "name": "Project ID"
+    },
+    {
+      "row": 21,
+      "section": "General Information",
+      "name": "Department / Functional User"
+    },
+    {
+      "row": 22,
+      "section": "General Information",
+      "name": "Business Process"
+    },
+    {
+      "row": 23,
+      "section": "General Information",
+      "name": "Sub-Process"
+    },
+    {
+      "row": 24,
+      "section": "General Information",
+      "name": "Application Comparison"
+    },
+    {
+      "row": 25,
+      "section": "General Information",
+      "name": "Application Replacement"
+    },
+    {
+      "row": 26,
+      "section": "General Information",
+      "name": "Named Users"
+    },
+    {
+      "row": 27,
+      "section": "General Information",
+      "name": "Concurrent Users"
+    },
+    {
+      "row": 29,
+      "section": "Business Units",
+      "name": "Business Unit 1"
+    },
+    {
+      "row": 30,
+      "section": "Business Units",
+      "name": "Business Unit 2"
+    },
+    {
+      "row": 31,
+      "section": "Business Units",
+      "name": "Business Unit 3"
+    },
+    {
+      "row": 32,
+      "section": "Business Units",
+      "name": "Business Unit 4"
+    },
+    {
+      "row": 33,
+      "section": "Business Units",
+      "name": "Business Unit 5"
+    },
+    {
+      "row": 34,
+      "section": "Business Units",
+      "name": "Business Unit 6"
+    },
+    {
+      "row": 35,
+      "section": "Business Units",
+      "name": "Business Unit 7"
+    },
+    {
+      "row": 36,
+      "section": "Business Units",
+      "name": "Business Unit 8"
+    },
+    {
+      "row": 37,
+      "section": "Business Units",
+      "name": "Business Unit 9"
+    },
+    {
+      "row": 38,
+      "section": "Business Units",
+      "name": "Business Unit 10"
+    },
+    {
+      "row": 39,
+      "section": "Business Units",
+      "name": "Business Unit 11"
+    },
+    {
+      "row": 40,
+      "section": "Business Units",
+      "name": "Business Unit 12"
+    },
+    {
+      "row": 41,
+      "section": "Business Units",
+      "name": "Business Unit 13"
+    },
+    {
+      "row": 42,
+      "section": "Business Units",
+      "name": "Business Unit 14"
+    },
+    {
+      "row": 43,
+      "section": "Business Units",
+      "name": "Business Unit 15"
+    },
+    {
+      "row": 44,
+      "section": "Business Units",
+      "name": "Business Unit 16"
+    },
+    {
+      "row": 45,
+      "section": "Business Units",
+      "name": "Business Unit 17"
+    },
+    {
+      "row": 46,
+      "section": "Business Units",
+      "name": "Business Unit 18"
+    },
+    {
+      "row": 47,
+      "section": "Business Units",
+      "name": "Business Unit 19"
+    },
+    {
+      "row": 48,
+      "section": "Business Units",
+      "name": "Business Unit 20"
+    },
+    {
+      "row": 49,
+      "section": "Business Units",
+      "name": "Business Unit 21"
+    },
+    {
+      "row": 50,
+      "section": "Business Units",
+      "name": "Business Unit 22"
+    },
+    {
+      "row": 51,
+      "section": "Business Units",
+      "name": "Business Unit 23"
+    },
+    {
+      "row": 52,
+      "section": "Business Units",
+      "name": "Business Unit 24"
+    },
+    {
+      "row": 53,
+      "section": "Business Units",
+      "name": "Business Unit 25"
+    },
+    {
+      "row": 54,
+      "section": "Business Units",
+      "name": "Business Unit 26"
+    },
+    {
+      "row": 55,
+      "section": "Business Units",
+      "name": "Business Unit 27"
+    },
+    {
+      "row": 56,
+      "section": "Business Units",
+      "name": "Business Unit 28"
+    },
+    {
+      "row": 57,
+      "section": "Business Units",
+      "name": "Business Unit 29"
+    },
+    {
+      "row": 58,
+      "section": "Business Units",
+      "name": "Business Unit 30"
+    },
+    {
+      "row": 59,
+      "section": "Business Units",
+      "name": "Business Unit 31"
+    },
+    {
+      "row": 60,
+      "section": "Business Units",
+      "name": "Other"
+    },
+    {
+      "row": 62,
+      "section": "Application Information",
+      "name": "Source"
+    },
+    {
+      "row": 63,
+      "section": "Application Information",
+      "name": "Category"
+    },
+    {
+      "row": 64,
+      "section": "Application Information",
+      "name": "Development Source"
+    },
+    {
+      "row": 65,
+      "section": "Application Information",
+      "name": "Vendor"
+    },
+    {
+      "row": 66,
+      "section": "Application Information",
+      "name": "Version"
+    },
+    {
+      "row": 67,
+      "section": "Application Information",
+      "name": "License"
+    },
+    {
+      "row": 68,
+      "section": "Application Information",
+      "name": "Package"
+    },
+    {
+      "row": 69,
+      "section": "Application Information",
+      "name": "Level of customization"
+    },
+    {
+      "row": 70,
+      "section": "Application Information",
+      "name": "Refresh Schedule"
+    },
+    {
+      "row": 71,
+      "section": "Application Information",
+      "name": "Architecture"
+    },
+    {
+      "row": 72,
+      "section": "Application Information",
+      "name": "Application Languages"
+    },
+    {
+      "row": 73,
+      "section": "Application Information",
+      "name": "Application Size"
+    },
+    {
+      "row": 74,
+      "section": "Application Information",
+      "name": "Named Users"
+    },
+    {
+      "row": 75,
+      "section": "Application Information",
+      "name": "Concurrent Users"
+    },
+    {
+      "row": 76,
+      "section": "Application Information",
+      "name": "Application Usage"
+    },
+    {
+      "row": 77,
+      "section": "Application Information",
+      "name": "Application Support"
+    },
+    {
+      "row": 78,
+      "section": "Application Information",
+      "name": "Deployment Scope"
+    },
+    {
+      "row": 79,
+      "section": "Application Information",
+      "name": "Date of initial deployment or purchase"
+    },
+    {
+      "row": 80,
+      "section": "Application Information",
+      "name": "Total Years of Use"
+    },
+    {
+      "row": 81,
+      "section": "Application Information",
+      "name": "Application Maturity"
+    },
+    {
+      "row": 82,
+      "section": "Application Information",
+      "name": "Managed"
+    },
+    {
+      "row": 83,
+      "section": "Application Information",
+      "name": "Support Hours"
+    },
+    {
+      "row": 84,
+      "section": "Application Information",
+      "name": "Application Size"
+    },
+    {
+      "row": 87,
+      "section": "Hardware",
+      "name": "Host Name (DNS)/Instance"
+    },
+    {
+      "row": 88,
+      "section": "Hardware",
+      "name": "Environments"
+    },
+    {
+      "row": 89,
+      "section": "Hardware",
+      "name": "Production Instances"
+    },
+    {
+      "row": 90,
+      "section": "Hardware",
+      "name": "Primary Hardware Platform"
+    },
+    {
+      "row": 91,
+      "section": "Hardware",
+      "name": "Secondary Hardware Platform"
+    },
+    {
+      "row": 92,
+      "section": "Hardware",
+      "name": "Primary OS"
+    },
+    {
+      "row": 93,
+      "section": "Hardware",
+      "name": "Secondary OS"
+    },
+    {
+      "row": 94,
+      "section": "Hardware",
+      "name": "Primary Server ID"
+    },
+    {
+      "row": 95,
+      "section": "Hardware",
+      "name": "Secondary Server ID"
+    },
+    {
+      "row": 96,
+      "section": "Hardware",
+      "name": "Primary Server Model"
+    },
+    {
+      "row": 97,
+      "section": "Hardware",
+      "name": "Secondary Server Model"
+    },
+    {
+      "row": 98,
+      "section": "Hardware",
+      "name": "Primary Server - Total CPUs"
+    },
+    {
+      "row": 99,
+      "section": "Hardware",
+      "name": "Secondary Server - Total CPUs"
+    },
+    {
+      "row": 100,
+      "section": "Hardware",
+      "name": "Primary Server CPU Speed"
+    },
+    {
+      "row": 101,
+      "section": "Hardware",
+      "name": "Secondary Server CPU Speed"
+    },
+    {
+      "row": 102,
+      "section": "Hardware",
+      "name": "Primary Server Memory Size"
+    },
+    {
+      "row": 103,
+      "section": "Hardware",
+      "name": "Secondary Server Memory Size"
+    },
+    {
+      "row": 104,
+      "section": "Hardware",
+      "name": "Storage"
+    },
+    {
+      "row": 105,
+      "section": "Hardware",
+      "name": "Allocated Storage"
+    },
+    {
+      "row": 106,
+      "section": "Hardware",
+      "name": "Primary Server Location"
+    },
+    {
+      "row": 107,
+      "section": "Hardware",
+      "name": "Secondary Server Location"
+    },
+    {
+      "row": 109,
+      "section": "Database",
+      "name": "Primary Database Vendor"
+    },
+    {
+      "row": 110,
+      "section": "Database",
+      "name": "Primary Database Version"
+    },
+    {
+      "row": 111,
+      "section": "Database",
+      "name": "Primary Database Type/Structure"
+    },
+    {
+      "row": 112,
+      "section": "Database",
+      "name": "Secondary Databases"
+    },
+    {
+      "row": 113,
+      "section": "Database",
+      "name": "Primary Database Host"
+    },
+    {
+      "row": 114,
+      "section": "Database",
+      "name": "Secondary Database Hosts"
+    },
+    {
+      "row": 115,
+      "section": "Database",
+      "name": "Primary Database Size (MB)"
+    },
+    {
+      "row": 116,
+      "section": "Database",
+      "name": "Secondary Database Size (MB)"
+    },
+    {
+      "row": 118,
+      "section": "Middleware & Tools",
+      "name": "Middleware"
+    },
+    {
+      "row": 119,
+      "section": "Middleware & Tools",
+      "name": "Other Software / Tools"
+    },
+    {
+      "row": 121,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 1"
+    },
+    {
+      "row": 122,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 2"
+    },
+    {
+      "row": 123,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 3"
+    },
+    {
+      "row": 124,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 4"
+    },
+    {
+      "row": 125,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 5"
+    },
+    {
+      "row": 126,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 6"
+    },
+    {
+      "row": 127,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 7"
+    },
+    {
+      "row": 128,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 8"
+    },
+    {
+      "row": 129,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 9"
+    },
+    {
+      "row": 130,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 10"
+    },
+    {
+      "row": 131,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 11"
+    },
+    {
+      "row": 132,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 12"
+    },
+    {
+      "row": 133,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 13"
+    },
+    {
+      "row": 134,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 14"
+    },
+    {
+      "row": 135,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 15"
+    },
+    {
+      "row": 136,
+      "section": "Business Applications Supported",
+      "name": "Application Systems 16"
+    },
+    {
+      "row": 138,
+      "section": "Comments",
+      "name": "Additional Comments from IT"
+    },
+    {
+      "row": 139,
+      "section": "Comments",
+      "name": "Additional Comments from Business"
+    }
+  ],
+  "finance": [
+    {
+      "row": 7,
+      "section": "Hardware / Infrastructure Costs",
+      "name": "Mainframe"
+    },
+    {
+      "row": 8,
+      "section": "Hardware / Infrastructure Costs",
+      "name": "Mid-Range"
+    },
+    {
+      "row": 9,
+      "section": "Hardware / Infrastructure Costs",
+      "name": "Storage"
+    },
+    {
+      "row": 10,
+      "section": "Hardware / Infrastructure Costs",
+      "name": "Disaster Recovery"
+    },
+    {
+      "row": 11,
+      "section": "Hardware / Infrastructure Costs",
+      "name": "Service Desk / Data Center"
+    },
+    {
+      "row": 12,
+      "section": "Hardware / Infrastructure Costs",
+      "name": "Other"
+    },
+    {
+      "row": 17,
+      "section": "Application Maintenance Costs",
+      "name": "Internal Staff"
+    },
+    {
+      "row": 18,
+      "section": "Application Maintenance Costs",
+      "name": "Captive Offshore"
+    },
+    {
+      "row": 19,
+      "section": "Application Maintenance Costs",
+      "name": "On-Shore Contractor/Consultants"
+    },
+    {
+      "row": 20,
+      "section": "Application Maintenance Costs",
+      "name": "Off-Shore Contractor/Consultants"
+    },
+    {
+      "row": 21,
+      "section": "Application Maintenance Costs",
+      "name": "Other"
+    },
+    {
+      "row": 25,
+      "section": "Application Development Costs",
+      "name": "Internal Staff"
+    },
+    {
+      "row": 26,
+      "section": "Application Development Costs",
+      "name": "Captive Offshore"
+    },
+    {
+      "row": 27,
+      "section": "Application Development Costs",
+      "name": "On-Shore Contractor"
+    },
+    {
+      "row": 28,
+      "section": "Application Development Costs",
+      "name": "Off-Shore Contractor"
+    },
+    {
+      "row": 29,
+      "section": "Application Development Costs",
+      "name": "Other"
+    },
+    {
+      "row": 33,
+      "section": "Commercial Software Costs",
+      "name": "Mainframe"
+    },
+    {
+      "row": 34,
+      "section": "Commercial Software Costs",
+      "name": "Mid-Range"
+    },
+    {
+      "row": 35,
+      "section": "Commercial Software Costs",
+      "name": "Desktop & Laptop"
+    },
+    {
+      "row": 36,
+      "section": "Commercial Software Costs",
+      "name": "Other"
+    },
+    {
+      "row": 41,
+      "section": "Past Costs",
+      "name": "Initial Implementation"
+    },
+    {
+      "row": 44,
+      "section": "Future Costs",
+      "name": "Planned Upgrade"
+    },
+    {
+      "row": 47,
+      "section": "Budget / Revenue",
+      "name": "Budget Allocation"
+    },
+    {
+      "row": 48,
+      "section": "Budget / Revenue",
+      "name": "Revenue Generation"
+    },
+    {
+      "row": 51,
+      "section": "Comments",
+      "name": "Additional Comments"
+    }
+  ]
+}

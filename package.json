@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed-dev": "NODE_ENV=development tsx prisma/seed-dev.ts",
-    "db:harden": "prisma db execute --file prisma/hardening.sql"
+    "db:harden": "prisma db execute --file prisma/hardening.sql",
+    "db:sync-bank": "tsx prisma/sync-bank.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.20",

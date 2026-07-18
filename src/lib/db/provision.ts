@@ -200,3 +200,87 @@ export async function createEngagementWithConfig(params: CreateEngagementParams)
   // acquisition (maxWait) and the provisioning work itself (timeout).
   { maxWait: 15_000, timeout: 30_000 });
 }
+
+/**
+ * Bring an existing engagement's survey templates up to the current bank
+ * version: creates missing templates, adds missing questions (by stable code)
+ * with their anchors, and creates neutral weightings for any new SCORED
+ * questions. Never modifies or removes existing questions/answers — additive
+ * only, so in-flight surveys are untouched.
+ */
+export async function syncEngagementFromBank(engagementId: string): Promise<{ addedQuestions: number }> {
+  const db = getRawPrisma();
+
+  return db.$transaction(
+    async (tx) => {
+      const bankTemplates = await tx.bankTemplate.findMany({
+        include: { questions: { include: { anchors: true }, orderBy: { orderIndex: "asc" } } },
+      });
+      let addedQuestions = 0;
+
+      for (const bank of bankTemplates) {
+        let template = await tx.surveyTemplate.findFirst({
+          where: { engagementId, type: bank.type },
+          include: { questions: { select: { code: true } } },
+        });
+        if (!template) {
+          template = {
+            ...(await tx.surveyTemplate.create({
+              data: { engagementId, type: bank.type, name: bank.name, bankVersion: bank.bankVersion },
+            })),
+            questions: [],
+          };
+        }
+        const existingCodes = new Set(template.questions.map((q) => q.code));
+        const missing = bank.questions.filter((q) => !existingCodes.has(q.code));
+        if (missing.length > 0) {
+          const created = await tx.surveyQuestion.createManyAndReturn({
+            data: missing.map((q) => ({
+              engagementId,
+              templateId: template.id,
+              code: q.code,
+              section: q.section,
+              text: q.text,
+              description: q.description,
+              orderIndex: q.orderIndex,
+              scoreFamily: q.scoreFamily,
+              answerKind: q.answerKind,
+              optionListKey: q.optionListKey,
+              legacyRef: q.legacyRef,
+            })),
+            select: { id: true, code: true, scoreFamily: true },
+          });
+          const idByCode = new Map(created.map((q) => [q.code, q.id]));
+
+          const anchorRows = missing.flatMap((q) =>
+            q.anchors.map((a) => ({
+              engagementId,
+              questionId: idByCode.get(q.code)!,
+              value: a.value,
+              text: a.text,
+            })),
+          );
+          if (anchorRows.length > 0) await tx.guidelineAnchor.createMany({ data: anchorRows });
+
+          const scoredNew = created.filter((q) => q.scoreFamily !== "NONE");
+          if (scoredNew.length > 0) {
+            await tx.questionWeighting.createMany({
+              data: scoredNew.map((q) => ({
+                engagementId,
+                questionId: q.id,
+                importanceRating: DEFAULT_IMPORTANCE_RATING,
+              })),
+            });
+          }
+          addedQuestions += missing.length;
+        }
+        if (template.bankVersion !== bank.bankVersion) {
+          await tx.surveyTemplate.update({ where: { id: template.id }, data: { bankVersion: bank.bankVersion } });
+        }
+      }
+
+      return { addedQuestions };
+    },
+    { maxWait: 15_000, timeout: 60_000 },
+  );
+}
