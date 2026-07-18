@@ -11,11 +11,16 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
   const { ctx, db } = await requireEngagementContext(engagementId);
   if (ctx.role === "CLIENT_RESPONDENT") redirect(`/e/${engagementId}/surveys`);
 
-  const [totalApps, inScope, dispositionGroups, responseGroups] = await Promise.all([
+  const [totalApps, inScope, dispositionGroups, responseGroups, templates, inScopeResponses] = await Promise.all([
     db.application.count(),
     db.application.count({ where: { inScope: true } }),
     db.dispositionResult.groupBy({ by: ["computedDisposition"], _count: { _all: true } }),
     db.surveyResponse.groupBy({ by: ["status"], _count: { _all: true } }),
+    db.surveyTemplate.findMany({ where: { questions: { some: {} } }, orderBy: { type: "asc" }, select: { id: true, name: true } }),
+    db.surveyResponse.findMany({
+      where: { application: { inScope: true } },
+      select: { templateId: true, status: true },
+    }),
   ]);
 
   const dispositionCounts = new Map(
@@ -38,6 +43,37 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
         <StatCard label="Out of scope" value={totalApps - inScope} />
         <StatCard label="Surveys complete" value={responseCounts.get("COMPLETE") ?? 0} />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Collection progress (in-scope applications)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+            {templates.map((t) => {
+              const complete = inScopeResponses.filter((r) => r.templateId === t.id && r.status === "COMPLETE").length;
+              const partial = inScopeResponses.filter((r) => r.templateId === t.id && r.status === "IN_PROGRESS").length;
+              const missing = Math.max(0, inScope - complete - partial);
+              return (
+                <div key={t.id} className="rounded-lg border bg-card p-4">
+                  <div className="text-sm font-medium">{t.name}</div>
+                  <div className="text-muted-foreground mt-1 space-y-0.5 text-xs tabular-nums">
+                    <div>Complete: {complete}</div>
+                    <div>Partial: {partial}</div>
+                    <div>Missing: {missing}</div>
+                  </div>
+                  <div className="bg-secondary mt-2 h-1.5 w-full overflow-hidden rounded">
+                    <div
+                      className="bg-brand h-full"
+                      style={{ width: inScope === 0 ? 0 : `${Math.round((complete / inScope) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

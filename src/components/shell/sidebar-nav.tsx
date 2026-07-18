@@ -20,6 +20,7 @@ function navItems(engagementId: string): NavItem[] {
     { href: `${base}/applications`, label: "Applications", roles: ["ENGAGEMENT_LEAD", "CONSULTANT", "CLIENT_VIEWER"] },
     { href: `${base}/surveys`, label: "Surveys", roles: ["ENGAGEMENT_LEAD", "CONSULTANT", "CLIENT_RESPONDENT"] },
     { href: `${base}/capabilities`, label: "Capabilities", roles: ["ENGAGEMENT_LEAD", "CONSULTANT", "CLIENT_VIEWER"] },
+    { href: `${base}/members`, label: "Members", roles: ["ENGAGEMENT_LEAD", "CONSULTANT"] },
     { href: `${base}/config/weightings`, label: "Weightings", roles: ["ENGAGEMENT_LEAD"] },
     { href: `${base}/config/thresholds`, label: "Thresholds", roles: ["ENGAGEMENT_LEAD"] },
     { href: `${base}/config/options`, label: "Option lists", roles: ["ENGAGEMENT_LEAD"] },
