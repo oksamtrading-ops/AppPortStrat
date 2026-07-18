@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { requireEngagementContext } from "@/lib/auth/context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { TYPE_SLUGS } from "@/lib/survey-slugs";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +14,8 @@ export default async function SurveysPage({ params }: { params: Promise<{ engage
     // The scoped client confines this query to the respondent's assignments.
     const assignments = await db.surveyAssignment.findMany({
       include: {
-        application: { select: { name: true, acronym: true } },
-        template: { select: { name: true, type: true } },
+        application: { select: { id: true, name: true, acronym: true, responses: { select: { templateId: true, status: true } } } },
+        template: { select: { id: true, name: true, type: true } },
       },
       orderBy: { createdAt: "asc" },
     });
@@ -21,22 +23,30 @@ export default async function SurveysPage({ params }: { params: Promise<{ engage
       <div className="space-y-4">
         <div>
           <h1 className="text-lg font-semibold">My surveys</h1>
-          <p className="text-muted-foreground text-sm">
-            Surveys assigned to you. The guided survey forms open here in Phase 3.
-          </p>
+          <p className="text-muted-foreground text-sm">Surveys assigned to you. Answers autosave as you go.</p>
         </div>
         {assignments.length === 0 ? (
           <p className="text-muted-foreground text-sm">Nothing assigned to you yet.</p>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
-            {assignments.map((a) => (
-              <Card key={a.id}>
-                <CardHeader>
-                  <CardTitle className="text-base">{a.application.name}</CardTitle>
-                  <CardDescription>{a.template.name}</CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
+            {assignments.map((a) => {
+              const status = a.application.responses.find((r) => r.templateId === a.template.id)?.status ?? "NOT_STARTED";
+              return (
+                <Link key={a.id} href={`/e/${engagementId}/surveys/${a.application.id}/${TYPE_SLUGS[a.template.type]}`}>
+                  <Card className="transition-colors hover:border-brand">
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between text-base">
+                        {a.application.name}
+                        <Badge variant={status === "COMPLETE" ? "default" : "outline"}>
+                          {status === "NOT_STARTED" ? "Not started" : status === "IN_PROGRESS" ? "In progress" : "Complete"}
+                        </Badge>
+                      </CardTitle>
+                      <CardDescription>{a.template.name}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

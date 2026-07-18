@@ -73,8 +73,11 @@ const RESPONDENT_READ_MODELS = new Set([
 ]);
 
 const RESPONDENT_WRITE_OPS: Record<string, ReadonlySet<string>> = {
-  Answer: new Set(["create", "update", "upsert", "delete"]),
-  SurveyResponse: new Set(["update"]),
+  // deleteMany carries the injected assignment predicate; "clear answer" uses it.
+  Answer: new Set(["create", "update", "upsert", "delete", "deleteMany"]),
+  // create/upsert: a respondent's first answer materializes the response row;
+  // the autosave action MUST pre-verify assignment via a respondent-scoped read.
+  SurveyResponse: new Set(["create", "update", "upsert"]),
 };
 
 /**

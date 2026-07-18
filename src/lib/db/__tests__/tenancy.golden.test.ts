@@ -124,11 +124,12 @@ describe("role-aware scoping (spec §2)", () => {
     }
   });
 
-  it("respondent can write answers and survey status, nothing else", () => {
+  it("respondent can write answers and survey responses (status/first-answer), nothing else", () => {
     expect(() =>
       guardArgs("Answer", "upsert", { where: { id: "ans1" }, create: {}, update: {} }, respondent),
     ).not.toThrow();
     expect(() => guardArgs("SurveyResponse", "update", { where: { id: "r1" }, data: {} }, respondent)).not.toThrow();
+    expect(() => guardArgs("SurveyResponse", "create", { data: {} }, respondent)).not.toThrow();
     expect(() => guardArgs("Application", "update", { where: { id: "a1" }, data: {} }, respondent)).toThrow(
       TenancyViolationError,
     );
