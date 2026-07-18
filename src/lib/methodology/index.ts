@@ -5,5 +5,6 @@ export * from "./disposition";
 export * from "./filtering";
 export * from "./heatmap";
 export * from "./labels";
+export * from "./stats";
 export * from "./answers";
 export * from "./portfolio";
