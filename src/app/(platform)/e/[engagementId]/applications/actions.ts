@@ -113,6 +113,91 @@ export async function deleteApplication(formData: FormData) {
   revalidatePath(`/e/${ctx.engagementId}/applications`);
 }
 
+/**
+ * Paste-import applications from Excel (TSV with a header row, mirroring the
+ * export columns). Capability names resolve against the EXISTING model only —
+ * the workbook's dropdowns never invented capabilities, so unknown names are
+ * reported, not created. Caps: 2,000 rows per paste.
+ */
+export async function importApplications(input: { engagementId: string; text: string }) {
+  const parsed = z
+    .object({ engagementId: z.string().min(1), text: z.string().min(1).max(2_000_000) })
+    .parse(input);
+  const { ctx, db, engagement } = await requireEngagementContext(parsed.engagementId, "CONSULTANT");
+
+  const { parseTsvWithHeader, parseBooleanCell } = await import("@/lib/tabular");
+  const { records, unknownColumns } = parseTsvWithHeader(parsed.text, {
+    name: ["name", "applicationname", "application"],
+    acronym: ["acronym"],
+    description: ["description", "applicationdescription"],
+    applicationType: ["type", "applicationtype"],
+    l0: ["l0", "l0capability"],
+    l1: ["l1", "l1capability"],
+    l2: ["l2", "l2capability"],
+    businessFunctionDetail: ["businessfunctiondetail"],
+    target: ["target"],
+    missionCritical: ["missioncritical", "missioncriticalperdeloitte"],
+    inScope: ["inscope"],
+    isUtilized: ["isutilized", "utilized"],
+    isReplaced: ["isreplaced", "replaced"],
+    inFlight: ["inflight", "indev"],
+    comments: ["comments", "overallcomments"],
+  });
+  if (records.length === 0) return { ok: false as const, error: "No data rows found — paste with a header row" };
+  if (records.length > 2000) return { ok: false as const, error: "Paste is limited to 2,000 rows at a time" };
+
+  const nodes = await db.capabilityNode.findMany({ select: { id: true, parentId: true, level: true, name: true } });
+  const norm = (s: string | undefined) => (s ?? "").trim().toLowerCase();
+  const resolveCapability = (l0?: string, l1?: string, l2?: string): string | null => {
+    const l0Node = l0 ? nodes.find((n) => n.level === "L0" && norm(n.name) === norm(l0)) : undefined;
+    const l1Node = l1
+      ? nodes.find((n) => n.level === "L1" && norm(n.name) === norm(l1) && (!l0Node || n.parentId === l0Node.id))
+      : undefined;
+    const l2Node = l2
+      ? nodes.find((n) => n.level === "L2" && norm(n.name) === norm(l2) && (!l1Node || n.parentId === l1Node.id))
+      : undefined;
+    return l2Node?.id ?? l1Node?.id ?? l0Node?.id ?? null;
+  };
+
+  let created = 0;
+  let unmappedCapabilities = 0;
+  const errors: string[] = [];
+  for (const record of records) {
+    if (!record.name) {
+      errors.push("Row skipped: missing name");
+      continue;
+    }
+    const capabilityNodeId = resolveCapability(record.l0, record.l1, record.l2);
+    if ((record.l0 || record.l1 || record.l2) && !capabilityNodeId) unmappedCapabilities += 1;
+    await createApplicationWithNumber(db, ctx.engagementId, {
+      name: record.name,
+      acronym: record.acronym ?? null,
+      description: record.description ?? null,
+      applicationType: record.applicationType ?? null,
+      businessFunctionDetail: record.businessFunctionDetail ?? null,
+      target: record.target ?? null,
+      comments: record.comments ?? null,
+      missionCritical: parseBooleanCell(record.missionCritical, false),
+      inScope: parseBooleanCell(record.inScope, true),
+      isUtilized: parseBooleanCell(record.isUtilized, true),
+      isReplaced: parseBooleanCell(record.isReplaced, false),
+      inFlight: parseBooleanCell(record.inFlight, false),
+      capabilityNodeId,
+    });
+    created += 1;
+  }
+
+  const { recomputeEngagement } = await import("@/lib/recompute");
+  await recomputeEngagement(ctx, db, engagement);
+  await writeAudit(db, ctx, {
+    action: "import.applications",
+    entityType: "Application",
+    after: { created, unmappedCapabilities, unknownColumns },
+  });
+  revalidatePath(`/e/${ctx.engagementId}/applications`);
+  return { ok: true as const, created, unmappedCapabilities, skipped: errors.length };
+}
+
 const FLAGS = ["inScope", "isUtilized", "isReplaced", "inFlight", "missionCritical"] as const;
 
 export async function toggleApplicationFlag(input: {

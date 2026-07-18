@@ -114,6 +114,47 @@ export async function deleteCapabilityNode(formData: FormData) {
   revalidatePath(`/e/${ctx.engagementId}/capabilities`);
 }
 
+/**
+ * Drag-and-drop re-parenting: move an L2 under a different L1 (same-engagement
+ * enforced by the scoped client + composite FK). Merges are refused — the
+ * capability model stays deduplicated per parent.
+ */
+export async function moveCapabilityNode(input: { engagementId: string; nodeId: string; newParentId: string }) {
+  const parsed = z
+    .object({ engagementId: z.string().min(1), nodeId: z.string().min(1), newParentId: z.string().min(1) })
+    .parse(input);
+  const { ctx, db } = await requireEngagementContext(parsed.engagementId, "CONSULTANT");
+
+  const [node, newParent] = await Promise.all([
+    db.capabilityNode.findUnique({ where: { id: parsed.nodeId } }),
+    db.capabilityNode.findUnique({ where: { id: parsed.newParentId } }),
+  ]);
+  if (!node || !newParent) throw new Error("Unknown capability node");
+  if (node.level !== "L2" || newParent.level !== "L1") {
+    return { ok: false as const, error: "Only L2 capabilities can be moved, onto an L1" };
+  }
+  if (node.parentId === newParent.id) return { ok: true as const, moved: false };
+
+  const duplicate = await db.capabilityNode.findFirst({
+    where: { level: "L2", parentId: newParent.id, name: node.name },
+  });
+  if (duplicate) {
+    return { ok: false as const, error: `"${node.name}" already exists under ${newParent.name}` };
+  }
+
+  const oldParent = node.parentId ? await db.capabilityNode.findUnique({ where: { id: node.parentId } }) : null;
+  await db.capabilityNode.update({ where: { id: node.id }, data: { parentId: newParent.id } });
+  await writeAudit(db, ctx, {
+    action: "capability.move",
+    entityType: "CapabilityNode",
+    entityId: node.id,
+    before: { parent: oldParent?.name ?? null },
+    after: { parent: newParent.name, name: node.name },
+  });
+  revalidatePath(`/e/${ctx.engagementId}/capabilities`);
+  return { ok: true as const, moved: true };
+}
+
 export async function pasteCapabilities(formData: FormData) {
   const parsed = z
     .object({ engagementId: z.string().min(1), text: z.string().min(1).max(500_000) })
