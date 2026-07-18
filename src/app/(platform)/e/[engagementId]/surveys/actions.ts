@@ -2,13 +2,10 @@
 
 import { z } from "zod";
 import { requireEngagementContext } from "@/lib/auth/context";
-import { validateAnswer, computeCompletion, formatScore } from "@/lib/methodology";
-import type { AnswerValue } from "@/lib/methodology";
-import { deriveWeights } from "@/lib/methodology";
+import { validateAnswer, formatScore } from "@/lib/methodology";
 import { writeAudit } from "@/lib/audit";
 import { recomputeApplication } from "@/lib/recompute";
-import type { ScopedDb } from "@/lib/db/scoped";
-import type { EngagementContext } from "@/lib/db/scoped";
+import { computeSurveyCompletion } from "@/lib/db/admin";
 
 const rawValueSchema = z.union([z.number(), z.string(), z.boolean(), z.null()]);
 
@@ -123,52 +120,18 @@ export async function saveAnswer(input: z.infer<typeof saveSchema>): Promise<Sav
   let scores: { bv: string; it: string } | null = null;
   if (question.scoreFamily !== "NONE") {
     await recomputeApplication(ctx, db, engagement, application.id);
-    const result = await db.dispositionResult.findFirst({ where: { applicationId: application.id } });
-    scores = { bv: formatScore(result?.bvScore ?? null), it: formatScore(result?.itScore ?? null) };
+    // Live score readback is consultant-facing; respondents cannot (and
+    // should not) read disposition results.
+    if (ctx.role !== "CLIENT_RESPONDENT") {
+      const result = await db.dispositionResult.findFirst({ where: { applicationId: application.id } });
+      scores = { bv: formatScore(result?.bvScore ?? null), it: formatScore(result?.itScore ?? null) };
+    }
   }
 
-  const completion = await computeTemplateCompletion(db, ctx, parsed.templateId, response.id);
+  const completion = await computeSurveyCompletion(ctx.engagementId, parsed.templateId, response.id);
   const fresh = await db.surveyResponse.findUnique({ where: { id: response.id }, select: { status: true } });
 
   return { ok: true, completion, scores, status: (fresh?.status ?? "IN_PROGRESS") as never };
-}
-
-/** Workbook-exact completion for one response (inventory §3.2, no 2% floor). */
-async function computeTemplateCompletion(db: ScopedDb, ctx: EngagementContext, templateId: string, responseId: string) {
-  const [questions, weightings, answers] = await Promise.all([
-    db.surveyQuestion.findMany({ where: { templateId }, select: { id: true, code: true, scoreFamily: true } }),
-    db.questionWeighting.findMany({
-      where: { question: { templateId } },
-      select: { importanceRating: true, question: { select: { code: true, scoreFamily: true } } },
-    }),
-    db.answer.findMany({ where: { responseId }, select: { questionId: true, isNA: true, numericValue: true, textValue: true, boolValue: true } }),
-  ]);
-  const byId = new Map(questions.map((q) => [q.id, q]));
-  const scored = questions.some((q) => q.scoreFamily !== "NONE");
-
-  if (scored) {
-    // IT/BV: applicable = weighted>0 questions + non-report; answered = numeric.
-    const reportRatings = new Map(
-      weightings.filter((w) => w.question.scoreFamily === "IT" || w.question.scoreFamily === "BUSINESS").map((w) => [w.question.code, w.importanceRating]),
-    );
-    const weights = deriveWeights(reportRatings);
-    const answerMap = new Map<string, AnswerValue>();
-    for (const a of answers) {
-      const q = byId.get(a.questionId);
-      if (!q) continue;
-      if (a.isNA) answerMap.set(q.code, "NA");
-      else if (a.numericValue !== null && a.numericValue >= 1 && a.numericValue <= 5) {
-        answerMap.set(q.code, Math.round(a.numericValue) as 1 | 2 | 3 | 4 | 5);
-      }
-    }
-    const nonReportCodes = questions.filter((q) => q.scoreFamily === "IT_NON_REPORT").map((q) => q.code);
-    return computeCompletion({ weights, answers: answerMap, alwaysApplicableCodes: nonReportCodes });
-  }
-
-  // Demographics/Finance: applicable = every field; answered = any value (Excel COUNTA).
-  const answeredCount = answers.filter((a) => a.isNA || a.numericValue !== null || a.textValue !== null || a.boolValue !== null).length;
-  const applicableCount = questions.length;
-  return { answeredCount, applicableCount, fraction: applicableCount === 0 ? 0 : answeredCount / applicableCount };
 }
 
 export async function setSurveyStatus(input: {

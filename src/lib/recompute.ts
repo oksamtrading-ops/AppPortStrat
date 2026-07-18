@@ -12,10 +12,21 @@ import { computePortfolio } from "@/lib/methodology";
 import { THRESHOLD_DEFAULTS } from "@/lib/engagement-defaults";
 import { rowsToSnapshot, type SnapshotRows } from "./recompute-core";
 import { persistPortfolioResults } from "./db/admin";
-import type { EngagementContext, ScopedDb } from "./db/scoped";
+import { getScopedDb, type EngagementContext, type ScopedDb } from "./db/scoped";
 
 export interface EngagementConfigShape {
   strictWorkbookScoring: boolean;
+}
+
+/**
+ * Recompute is SYSTEM work triggered by a user action: a Client Respondent's
+ * answer must re-score the app even though respondents cannot read weightings
+ * or thresholds themselves. Snapshot reads therefore run under a
+ * role-elevated context that KEEPS the caller's engagement — tenancy is
+ * unchanged, only role scoping is lifted, and only inside this trusted module.
+ */
+function systemDb(ctx: EngagementContext): ScopedDb {
+  return getScopedDb({ ...ctx, role: "ENGAGEMENT_LEAD", readOnly: false });
 }
 
 async function loadSnapshotRows(
@@ -93,11 +104,11 @@ async function loadSnapshotRows(
 /** Full-portfolio recompute for config changes. Logs its duration (<1s NFR). */
 export async function recomputeEngagement(
   ctx: EngagementContext,
-  db: ScopedDb,
+  _db: ScopedDb, // kept for call-site symmetry; reads use systemDb(ctx)
   engagement: EngagementConfigShape,
 ): Promise<{ appCount: number; durationMs: number }> {
   const t0 = performance.now();
-  const rows = await loadSnapshotRows(db, engagement);
+  const rows = await loadSnapshotRows(systemDb(ctx), engagement);
   const results = computePortfolio(rowsToSnapshot(rows));
   await persistPortfolioResults(ctx.engagementId, results, { bumpConfigVersion: true });
   const durationMs = Math.round(performance.now() - t0);
@@ -108,11 +119,11 @@ export async function recomputeEngagement(
 /** Single-application recompute for answer/flag/override changes. */
 export async function recomputeApplication(
   ctx: EngagementContext,
-  db: ScopedDb,
+  _db: ScopedDb, // kept for call-site symmetry; reads use systemDb(ctx)
   engagement: EngagementConfigShape,
   applicationId: string,
 ): Promise<void> {
-  const rows = await loadSnapshotRows(db, engagement, applicationId);
+  const rows = await loadSnapshotRows(systemDb(ctx), engagement, applicationId);
   const results = computePortfolio(rowsToSnapshot(rows));
   await persistPortfolioResults(ctx.engagementId, results, { bumpConfigVersion: false });
 }

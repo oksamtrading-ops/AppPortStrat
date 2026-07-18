@@ -107,6 +107,56 @@ export async function findMembership(engagementId: string, params: { clerkUserId
 }
 
 /**
+ * Survey completion counts (inventory §3.2, no 2% floor). Admin door by
+ * design: Client Respondents may not read QuestionWeighting, but the
+ * completion DENOMINATOR (how many questions count) is needed to render
+ * their own survey. Only counts leave this function — never weighting values.
+ * Tenancy: every query is explicitly filtered by the caller's engagementId.
+ */
+export async function computeSurveyCompletion(
+  engagementId: string,
+  templateId: string,
+  responseId: string | null,
+): Promise<{ answeredCount: number; applicableCount: number; fraction: number }> {
+  const db = getRawPrisma();
+  const template = await db.surveyTemplate.findFirst({
+    where: { id: templateId, engagementId },
+    include: { questions: { select: { id: true, scoreFamily: true } } },
+  });
+  if (!template) throw new Error("Unknown template for this engagement");
+
+  const answers = responseId
+    ? await db.answer.findMany({
+        where: { responseId, engagementId },
+        select: { questionId: true, isNA: true, numericValue: true, textValue: true, boolValue: true },
+      })
+    : [];
+
+  const scored = template.questions.some((q) => q.scoreFamily !== "NONE");
+  if (!scored) {
+    // Demographics/Finance: applicable = every field; answered = any value (Excel COUNTA).
+    const answeredCount = answers.filter(
+      (a) => a.isNA || a.numericValue !== null || a.textValue !== null || a.boolValue !== null,
+    ).length;
+    const applicableCount = template.questions.length;
+    return { answeredCount, applicableCount, fraction: applicableCount === 0 ? 0 : answeredCount / applicableCount };
+  }
+
+  // IT/BV: applicable = weighted>0 report questions + non-report; answered = numeric (N/A ≠ answered).
+  const weightedCount = await db.questionWeighting.count({
+    where: {
+      engagementId,
+      importanceRating: { gt: 0 },
+      question: { templateId, scoreFamily: { in: ["IT", "BUSINESS"] } },
+    },
+  });
+  const nonReportCount = template.questions.filter((q) => q.scoreFamily === "IT_NON_REPORT").length;
+  const applicableCount = weightedCount + nonReportCount;
+  const answeredCount = answers.filter((a) => !a.isNA && a.numericValue !== null).length;
+  return { answeredCount, applicableCount, fraction: applicableCount === 0 ? 0 : answeredCount / applicableCount };
+}
+
+/**
  * Convergent membership sync from a verified Clerk membership list (webhook).
  * Upserts every current member, removes rows whose clerkUserId is no longer
  * in the org (email-invite rows with no clerkUserId yet are left alone).

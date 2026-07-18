@@ -73,25 +73,14 @@ export default async function SurveyFormPage({
     };
   }
 
-  // Initial completion mirrors the autosave response semantics.
-  const scored = template.questions.some((q) => q.scoreFamily !== "NONE");
-  let applicableCount: number;
-  if (scored) {
-    const weightings = await db.questionWeighting.findMany({
-      where: { question: { templateId: template.id } },
-      select: { importanceRating: true, question: { select: { scoreFamily: true } } },
-    });
-    const weighted = weightings.filter(
-      (w) => w.importanceRating > 0 && (w.question.scoreFamily === "IT" || w.question.scoreFamily === "BUSINESS"),
-    ).length;
-    const nonReport = template.questions.filter((q) => q.scoreFamily === "IT_NON_REPORT").length;
-    applicableCount = weighted + nonReport;
-  } else {
-    applicableCount = template.questions.length;
-  }
-  const answeredCount = scored
-    ? (response?.answers ?? []).filter((a) => a.numericValue !== null && !a.isNA).length
-    : (response?.answers ?? []).filter((a) => a.isNA || a.numericValue !== null || a.textValue !== null || a.boolValue !== null).length;
+  // Initial completion — same admin-door computation the autosave returns
+  // (respondents cannot read QuestionWeighting; only counts cross this line).
+  const { computeSurveyCompletion } = await import("@/lib/db/admin");
+  const { answeredCount, applicableCount } = await computeSurveyCompletion(
+    ctx.engagementId,
+    template.id,
+    response?.id ?? null,
+  );
 
   return (
     <SurveyForm

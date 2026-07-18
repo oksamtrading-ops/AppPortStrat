@@ -166,11 +166,15 @@ export function guardArgs(model: string, operation: string, rawArgs: unknown, ct
   }
 
   if (ctx.role === "CLIENT_RESPONDENT") {
-    if (!RESPONDENT_READ_MODELS.has(model)) {
-      throw new TenancyViolationError(`Client Respondents cannot access ${model}`);
-    }
-    if (isWrite && !RESPONDENT_WRITE_OPS[model]?.has(operation)) {
-      throw new TenancyViolationError(`Client Respondents cannot ${operation} ${model}`);
+    // Respondents' own actions are audited: APPEND allowed, reads stay denied.
+    const isAuditAppend = model === "AuditEvent" && operation === "create";
+    if (!isAuditAppend) {
+      if (!RESPONDENT_READ_MODELS.has(model)) {
+        throw new TenancyViolationError(`Client Respondents cannot access ${model}`);
+      }
+      if (isWrite && !RESPONDENT_WRITE_OPS[model]?.has(operation)) {
+        throw new TenancyViolationError(`Client Respondents cannot ${operation} ${model}`);
+      }
     }
   }
 
