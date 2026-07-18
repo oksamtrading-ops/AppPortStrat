@@ -22,13 +22,14 @@ export function parseCapabilityPaste(text: string): ParsedCapabilityTree {
   let skippedLines = 0;
 
   for (const rawLine of text.split(/\r?\n/)) {
-    if (rawLine.trim() === "") continue;
-    const cells = rawLine.split("\t").map((c) => c.trim());
-    const [l0raw = "", l1raw = "", l2raw = ""] = cells;
-    if (!l0raw && !l1raw && !l2raw) {
-      skippedLines += 1;
+    if (rawLine.trim() === "") {
+      // A line WITH cell structure but only blank cells is a skipped row;
+      // plain empty lines are paste artifacts and ignored silently.
+      if (rawLine.includes("\t")) skippedLines += 1;
       continue;
     }
+    const cells = rawLine.split("\t").map((c) => c.trim());
+    const [l0raw = "", l1raw = "", l2raw = ""] = cells;
 
     const l0 = l0raw || UNASSIGNED;
     const l1 = l1raw || UNASSIGNED;
