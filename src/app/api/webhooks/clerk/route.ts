@@ -42,6 +42,12 @@ export async function POST(req: Request) {
   const clerkOrgId = event.data.organization?.id;
   if (!clerkOrgId) return NextResponse.json({ ok: true, skipped: "no organization" });
 
+  // Each delivery amplifies into a Backend-API re-fetch + N upserts; throttle
+  // per organization so a burst of membership events can't overwhelm the DB.
+  const { rateLimit } = await import("@/lib/db/admin");
+  const { allowed } = await rateLimit(`webhook:${clerkOrgId}`, 30, 60);
+  if (!allowed) return NextResponse.json({ ok: false, error: "rate limited" }, { status: 429 });
+
   // Convergent sync: fetch the CURRENT membership list and reconcile.
   const { clerkClient } = await import("@clerk/nextjs/server");
   const client = await clerkClient();

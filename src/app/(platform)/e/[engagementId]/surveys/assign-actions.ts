@@ -15,7 +15,7 @@ export async function assignSurveys(formData: FormData) {
       engagementId: z.string().min(1),
       applicationId: z.string().min(1),
       membershipId: z.string().min(1),
-      templateIds: z.array(z.string().min(1)).min(1),
+      templateIds: z.array(z.string().min(1)).min(1).max(20),
     })
     .parse({
       engagementId: formData.get("engagementId"),

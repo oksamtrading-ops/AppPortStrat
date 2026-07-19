@@ -540,3 +540,14 @@ model EngagementTombstone {
 
   @@index([deletedAt])
 }
+
+/// Serverless-safe fixed-window rate limiter (no external Redis). One row per
+/// (key, time-window); an atomic INSERT ... ON CONFLICT increments the count.
+/// Platform-level (opaque keys), so NOT tenant-scoped / not RLS'd.
+model RateLimitHit {
+  bucket    String   @id // "<key>:<windowIndex>"
+  count     Int      @default(0)
+  windowEnd DateTime
+
+  @@index([windowEnd])
+}

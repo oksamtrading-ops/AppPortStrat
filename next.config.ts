@@ -1,15 +1,8 @@
 import type { NextConfig } from "next";
 
+// The Content-Security-Policy is set per-request in proxy.ts (it carries a
+// per-request script nonce). These are the static security headers.
 const securityHeaders = [
-  {
-    key: "Content-Security-Policy",
-    // Conservative baseline; Clerk's components need its script/connect origins.
-    value: [
-      "frame-ancestors 'none'",
-      "object-src 'none'",
-      "base-uri 'self'",
-    ].join("; "),
-  },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },

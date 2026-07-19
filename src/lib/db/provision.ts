@@ -38,6 +38,9 @@ export async function createEngagementWithConfig(params: CreateEngagementParams)
         clerkOrgId: params.clerkOrgId ?? null,
       },
     });
+    // Set the engagement GUC so the child writes below satisfy FORCE'd RLS on
+    // this admin-door transaction (defense-in-depth, hardening.sql).
+    await tx.$executeRaw`SELECT set_config('app.engagement_id', ${engagement.id}, TRUE)`;
 
     // 1. Clone the survey templates/questions/anchors from the global bank
     //    (always — the question set is methodology, not configuration).
@@ -213,6 +216,9 @@ export async function syncEngagementFromBank(engagementId: string): Promise<{ ad
 
   return db.$transaction(
     async (tx) => {
+      // Set the engagement GUC so writes to RLS'd survey tables satisfy FORCE'd
+      // RLS on this admin-door transaction (defense-in-depth, hardening.sql).
+      await tx.$executeRaw`SELECT set_config('app.engagement_id', ${engagementId}, TRUE)`;
       const bankTemplates = await tx.bankTemplate.findMany({
         include: { questions: { include: { anchors: true }, orderBy: { orderIndex: "asc" } } },
       });

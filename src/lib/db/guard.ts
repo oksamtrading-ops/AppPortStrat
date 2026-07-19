@@ -81,6 +81,86 @@ const RESPONDENT_WRITE_OPS: Record<string, ReadonlySet<string>> = {
 };
 
 /**
+ * model → { relationField → target model }. The top-level model's `where` is
+ * predicate-scoped, but relations pulled via `include`/`select` are NOT — so a
+ * respondent-reachable read could traverse into a role-denied model (scores,
+ * costs, other members) within their own tenant (security review F2). This map
+ * lets the guard re-check every included/selected relation's target model.
+ *
+ * Kept in lockstep with the Prisma schema by a drift test
+ * (relation-map.drift.test.ts) that parses schema.prisma and fails on any
+ * mismatch — so this can't silently rot. Pure data (no Prisma import) keeps
+ * the guard unit-testable without a database.
+ */
+const RELATION_MAP: Record<string, Record<string, string>> = {
+  Engagement: {
+    memberships: "Membership", applications: "Application", capabilityNodes: "CapabilityNode",
+    surveyTemplates: "SurveyTemplate", surveyQuestions: "SurveyQuestion", guidelineAnchors: "GuidelineAnchor",
+    questionWeightings: "QuestionWeighting", thresholdConfig: "ThresholdConfig", surveyAssignments: "SurveyAssignment",
+    surveyResponses: "SurveyResponse", answers: "Answer", dispositionResults: "DispositionResult",
+    dispositionOverrides: "DispositionOverride", costRecords: "CostRecord", optionLists: "OptionList",
+    optionItems: "OptionItem", auditEvents: "AuditEvent",
+  },
+  Membership: { engagement: "Engagement", assignments: "SurveyAssignment" },
+  BankTemplate: { questions: "BankQuestion" },
+  BankQuestion: { template: "BankTemplate", anchors: "BankAnchor" },
+  BankAnchor: { question: "BankQuestion" },
+  SurveyTemplate: { engagement: "Engagement", questions: "SurveyQuestion", assignments: "SurveyAssignment", responses: "SurveyResponse" },
+  SurveyQuestion: { engagement: "Engagement", template: "SurveyTemplate", anchors: "GuidelineAnchor", weighting: "QuestionWeighting", answers: "Answer" },
+  GuidelineAnchor: { engagement: "Engagement", question: "SurveyQuestion" },
+  QuestionWeighting: { engagement: "Engagement", question: "SurveyQuestion" },
+  ThresholdConfig: { engagement: "Engagement" },
+  Application: { engagement: "Engagement", assignments: "SurveyAssignment", responses: "SurveyResponse", result: "DispositionResult", override: "DispositionOverride", costRecords: "CostRecord" },
+  CapabilityNode: { engagement: "Engagement", parent: "CapabilityNode", children: "CapabilityNode" },
+  SurveyAssignment: { engagement: "Engagement", application: "Application", template: "SurveyTemplate", membership: "Membership" },
+  SurveyResponse: { engagement: "Engagement", application: "Application", template: "SurveyTemplate", answers: "Answer" },
+  Answer: { engagement: "Engagement", response: "SurveyResponse", question: "SurveyQuestion" },
+  DispositionResult: { engagement: "Engagement", application: "Application" },
+  DispositionOverride: { engagement: "Engagement", application: "Application" },
+  CostRecord: { engagement: "Engagement", application: "Application" },
+  OptionList: { engagement: "Engagement", items: "OptionItem" },
+  OptionItem: { engagement: "Engagement", list: "OptionList" },
+  AuditEvent: { engagement: "Engagement" },
+  EngagementTombstone: {},
+  RateLimitHit: {},
+};
+
+export const RELATION_MAP_FOR_TEST = RELATION_MAP;
+
+/**
+ * For a CLIENT_RESPONDENT read, verify every relation reached via include/select
+ * targets a model they may read; deny unknown relations (default-deny). Recurses
+ * into nested include/select. `_count` selects only aggregate counts → allowed.
+ */
+function assertRespondentRelations(model: string, node: Record<string, unknown> | undefined): void {
+  if (!node) return;
+  const check = (field: string, value: unknown) => {
+    const target = RELATION_MAP[model]?.[field];
+    if (!target) {
+      throw new TenancyViolationError(`Client Respondents cannot traverse ${model}.${field}`);
+    }
+    if (!RESPONDENT_READ_MODELS.has(target)) {
+      throw new TenancyViolationError(`Client Respondents cannot read ${target} via ${model}.${field}`);
+    }
+    if (value !== null && typeof value === "object") {
+      assertRespondentRelations(target, value as Record<string, unknown>);
+    }
+  };
+
+  const include = node.include as Record<string, unknown> | undefined;
+  for (const [field, value] of Object.entries(include ?? {})) {
+    if (value === false) continue;
+    check(field, value);
+  }
+  const select = node.select as Record<string, unknown> | undefined;
+  for (const [field, value] of Object.entries(select ?? {})) {
+    if (field === "_count") continue; // aggregate count only, no row data
+    // Scalar selects are `field: true/false`; a relation select is an object.
+    if (value !== null && typeof value === "object") check(field, value);
+  }
+}
+
+/**
  * Relation predicates confining a Client Respondent to their assigned
  * applications. Injected into every where clause. (Creates cannot carry a
  * predicate — the survey autosave action MUST pre-verify assignment through a
@@ -176,6 +256,9 @@ export function guardArgs(model: string, operation: string, rawArgs: unknown, ct
         throw new TenancyViolationError(`Client Respondents cannot ${operation} ${model}`);
       }
     }
+    // Relations reached via include/select are not predicate-scoped — re-check
+    // that each targets a readable model (security review F2).
+    assertRespondentRelations(model, rawArgs as Record<string, unknown> | undefined);
   }
 
   const args: Record<string, unknown> = structuredClone(rawArgs ?? {}) as Record<string, unknown>;

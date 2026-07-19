@@ -1,11 +1,15 @@
 import { requireEngagementContext } from "@/lib/auth/context";
 import { buildEngagementDeck } from "@/lib/pptx-export";
 import { writeAudit } from "@/lib/audit";
+import { tooManyRequests } from "@/lib/rate-limit-route";
 
 /** Client-ready PPTX deck export (Consultant+). */
 export async function GET(_req: Request, { params }: { params: Promise<{ engagementId: string }> }) {
   const { engagementId } = await params;
   const { ctx, db, engagement } = await requireEngagementContext(engagementId, "CONSULTANT");
+
+  const limited = await tooManyRequests(`export:${ctx.membershipId}`, 20, 60);
+  if (limited) return limited;
 
   const buffer = await buildEngagementDeck(db, {
     name: engagement.name,

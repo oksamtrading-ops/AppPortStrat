@@ -58,10 +58,10 @@ export async function importCostRecords(input: { engagementId: string; text: str
     }
     rows.push({
       applicationId,
-      fiscalYear: r.fiscalYear,
+      fiscalYear: r.fiscalYear.slice(0, 40),
       versionType,
-      category: r.category,
-      lineItem: r.lineItem ?? r.category,
+      category: r.category.slice(0, 200),
+      lineItem: (r.lineItem ?? r.category).slice(0, 200),
       amount,
     });
   }

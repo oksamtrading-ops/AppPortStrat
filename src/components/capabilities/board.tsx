@@ -52,10 +52,13 @@ export function CapabilityBoard({
   engagementId,
   sections,
   canEdit,
+  canDelete,
 }: {
   engagementId: string;
   sections: L0SectionData[];
   canEdit: boolean;
+  /** Deleting a subtree is Engagement-Lead-only; add/rename/move stay at canEdit. */
+  canDelete: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -115,7 +118,7 @@ export function CapabilityBoard({
             <h2 className="text-sm font-semibold tracking-tight">{l0.name}</h2>
             {l0.isPlaceholder ? <Pill color="amber">placeholder — resolve</Pill> : null}
             {canEdit ? (
-              <NodeMenu engagementId={engagementId} nodeId={l0.id} name={l0.name} level="L0" />
+              <NodeMenu engagementId={engagementId} nodeId={l0.id} name={l0.name} level="L0" canDelete={canDelete} />
             ) : null}
           </div>
 
@@ -157,7 +160,7 @@ export function CapabilityBoard({
                     </Badge>
                     <span className="font-semibold">{l1.name}</span>
                     {l1.isPlaceholder ? <Pill color="amber">placeholder</Pill> : null}
-                    {canEdit ? <NodeMenu engagementId={engagementId} nodeId={l1.id} name={l1.name} level="L1" /> : null}
+                    {canEdit ? <NodeMenu engagementId={engagementId} nodeId={l1.id} name={l1.name} level="L1" canDelete={canDelete} /> : null}
                   </span>
                   <span className="flex items-center gap-2">
                     {l1.appCount > 0 ? (
@@ -232,7 +235,7 @@ export function CapabilityBoard({
                           </span>
                           {canEdit ? (
                             <span className="invisible flex gap-1 group-hover:visible">
-                              <NodeMenu engagementId={engagementId} nodeId={l2.id} name={l2.name} level="L2" />
+                              <NodeMenu engagementId={engagementId} nodeId={l2.id} name={l2.name} level="L2" canDelete={canDelete} />
                             </span>
                           ) : null}
                         </div>
@@ -282,11 +285,13 @@ function NodeMenu({
   nodeId,
   name,
   level,
+  canDelete,
 }: {
   engagementId: string;
   nodeId: string;
   name: string;
   level: "L0" | "L1" | "L2";
+  canDelete: boolean;
 }) {
   return (
     <details className="relative" onClick={(e) => e.stopPropagation()}>
@@ -300,13 +305,17 @@ function NodeMenu({
             Rename
           </Button>
         </form>
-        <form action={deleteCapabilityNode}>
-          <input type="hidden" name="engagementId" value={engagementId} />
-          <input type="hidden" name="nodeId" value={nodeId} />
-          <Button type="submit" size="sm" variant="ghost" className="text-destructive h-7 w-full justify-start px-2 text-xs">
-            Delete {level === "L0" ? "L0 (and children)" : ""}
-          </Button>
-        </form>
+        {canDelete ? (
+          <form action={deleteCapabilityNode}>
+            <input type="hidden" name="engagementId" value={engagementId} />
+            <input type="hidden" name="nodeId" value={nodeId} />
+            <Button type="submit" size="sm" variant="ghost" className="text-destructive h-7 w-full justify-start px-2 text-xs">
+              Delete {level === "L0" ? "L0 (and children)" : ""}
+            </Button>
+          </form>
+        ) : (
+          <p className="text-muted-foreground px-2 text-[10px]">Only an Engagement Lead can delete capabilities.</p>
+        )}
       </div>
     </details>
   );

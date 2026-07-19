@@ -160,3 +160,69 @@ describe("role-aware scoping (spec §2)", () => {
     );
   });
 });
+
+describe("F2: respondent include/select cannot traverse into denied models", () => {
+  const respondent = ctx({ role: "CLIENT_RESPONDENT", membershipId: "mem_r" });
+
+  it("rejects including a denied relation (scores, overrides, costs)", () => {
+    expect(() => guardArgs("Application", "findMany", { include: { result: true } }, respondent)).toThrow(
+      TenancyViolationError,
+    );
+    expect(() => guardArgs("Application", "findMany", { include: { override: true } }, respondent)).toThrow(
+      TenancyViolationError,
+    );
+    expect(() => guardArgs("Application", "findMany", { include: { costRecords: true } }, respondent)).toThrow(
+      TenancyViolationError,
+    );
+  });
+
+  it("rejects reaching other members via SurveyAssignment.membership", () => {
+    expect(() => guardArgs("SurveyAssignment", "findMany", { include: { membership: true } }, respondent)).toThrow(
+      TenancyViolationError,
+    );
+  });
+
+  it("allows the relations respondents legitimately traverse", () => {
+    expect(() =>
+      guardArgs("SurveyAssignment", "findMany", { include: { application: true, template: true } }, respondent),
+    ).not.toThrow();
+    expect(() => guardArgs("SurveyResponse", "findUnique", { where: { id: "r" }, include: { answers: true } }, respondent)).not.toThrow();
+    expect(() =>
+      guardArgs("SurveyTemplate", "findFirst", { include: { questions: { include: { anchors: true } } } }, respondent),
+    ).not.toThrow();
+    expect(() => guardArgs("OptionList", "findMany", { include: { items: true } }, respondent)).not.toThrow();
+  });
+
+  it("recurses: a denied model nested under an allowed include is rejected", () => {
+    expect(() =>
+      guardArgs(
+        "Application",
+        "findMany",
+        { include: { responses: { include: { application: { include: { result: true } } } } } },
+        respondent,
+      ),
+    ).toThrow(TenancyViolationError);
+  });
+
+  it("nested relation SELECT is checked; scalar select and _count are fine", () => {
+    expect(() => guardArgs("Application", "findMany", { select: { id: true, name: true } }, respondent)).not.toThrow();
+    expect(() => guardArgs("Application", "findMany", { select: { _count: true } }, respondent)).not.toThrow();
+    expect(() => guardArgs("Application", "findMany", { select: { result: { select: { bvScore: true } } } }, respondent)).toThrow(
+      TenancyViolationError,
+    );
+    expect(() =>
+      guardArgs("SurveyResponse", "findMany", { select: { id: true, answers: { select: { numericValue: true } } } }, respondent),
+    ).not.toThrow();
+  });
+
+  it("unknown/unmapped relation is denied (default-deny)", () => {
+    expect(() => guardArgs("Application", "findMany", { include: { madeUpRelation: true } }, respondent)).toThrow(
+      TenancyViolationError,
+    );
+  });
+
+  it("does not restrict includes for non-respondent roles", () => {
+    const consultant = ctx({ role: "CONSULTANT" });
+    expect(() => guardArgs("Application", "findMany", { include: { result: true, costRecords: true } }, consultant)).not.toThrow();
+  });
+});

@@ -53,10 +53,40 @@ const NEEDED_SHEETS = new Set([
   "Financial Data",
 ]);
 
+// Decompression-bomb guards (security review). A 30 MB ZIP can inflate to
+// gigabytes; the ZIP central directory records each entry's uncompressed size,
+// so we budget BEFORE inflating anything.
+const MAX_TOTAL_UNCOMPRESSED = 300 * 1024 * 1024; // 300 MB across all entries
+const MAX_ENTRY_UNCOMPRESSED = 80 * 1024 * 1024; // 80 MB per entry
+
+/** Uncompressed size from the central directory, or null if unavailable. */
+function uncompressedSize(file: unknown): number | null {
+  const data = (file as { _data?: { uncompressedSize?: number } } | null)?._data;
+  return typeof data?.uncompressedSize === "number" ? data.uncompressedSize : null;
+}
+
 async function loadLegacySheets(buffer: ArrayBuffer): Promise<Map<string, SheetCells>> {
   const { default: JSZip } = await import("jszip");
   const zip = await JSZip.loadAsync(buffer);
-  const read = async (name: string) => zip.file(name)?.async("string");
+
+  // Reject an archive whose declared uncompressed total is a decompression bomb.
+  let total = 0;
+  for (const name of Object.keys(zip.files)) {
+    total += uncompressedSize(zip.files[name]) ?? 0;
+  }
+  if (total > MAX_TOTAL_UNCOMPRESSED) {
+    throw new Error("Workbook is too large when decompressed — refusing to import (possible decompression bomb)");
+  }
+
+  const read = async (name: string): Promise<string | undefined> => {
+    const file = zip.file(name);
+    if (!file) return undefined;
+    const size = uncompressedSize(file);
+    if (size !== null && size > MAX_ENTRY_UNCOMPRESSED) {
+      throw new Error(`Workbook part "${name}" is too large when decompressed — refusing to import`);
+    }
+    return file.async("string");
+  };
 
   // Sheet name → worksheet part path (workbook.xml + its rels).
   const workbookXml = await read("xl/workbook.xml");

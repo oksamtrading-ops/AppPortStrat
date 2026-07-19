@@ -15,6 +15,40 @@ export function adminDb() {
 }
 
 /**
+ * Serverless-safe fixed-window rate limiter (security review: expensive paths
+ * were unthrottled). Atomic INSERT ... ON CONFLICT increments the per-window
+ * counter in one round-trip; no external Redis. Fails OPEN on any DB error so
+ * a limiter hiccup never blocks legitimate traffic.
+ */
+export async function rateLimit(
+  key: string,
+  limit: number,
+  windowSeconds: number,
+  now: number = Date.now(),
+): Promise<{ allowed: boolean; count: number }> {
+  const windowIndex = Math.floor(now / (windowSeconds * 1000));
+  const bucket = `${key}:${windowIndex}`;
+  const windowEnd = new Date((windowIndex + 1) * windowSeconds * 1000);
+  const db = getRawPrisma();
+  try {
+    const rows = await db.$queryRaw<Array<{ count: number }>>`
+      INSERT INTO "RateLimitHit" ("bucket", "count", "windowEnd")
+      VALUES (${bucket}, 1, ${windowEnd})
+      ON CONFLICT ("bucket") DO UPDATE SET "count" = "RateLimitHit"."count" + 1
+      RETURNING "count"`;
+    const count = rows[0]?.count ?? 1;
+    // Opportunistic cleanup of expired buckets (~1% of calls) keeps the table
+    // from accumulating stale rows without a scheduled job.
+    if (Math.random() < 0.01) {
+      await db.$executeRaw`DELETE FROM "RateLimitHit" WHERE "windowEnd" < now()`;
+    }
+    return { allowed: count <= limit, count };
+  } catch {
+    return { allowed: true, count: 0 }; // fail open
+  }
+}
+
+/**
  * THE one sanctioned raw statement: bulk-persist computed portfolio results.
  * - Serialized per engagement via pg_advisory_xact_lock (concurrent config
  *   saves cannot interleave).
@@ -32,6 +66,10 @@ export async function persistPortfolioResults(
 
   return db.$transaction(
     async (tx) => {
+      // Under FORCE ROW LEVEL SECURITY the admin door is itself subject to the
+      // tenant policy, so set the engagement GUC for this transaction's writes
+      // to the RLS'd DispositionResult table (defense-in-depth, hardening.sql).
+      await tx.$executeRaw`SELECT set_config('app.engagement_id', ${engagementId}, TRUE)`;
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${engagementId}))`;
 
       const engagement = opts.bumpConfigVersion
@@ -118,42 +156,47 @@ export async function computeSurveyCompletion(
   templateId: string,
   responseId: string | null,
 ): Promise<{ answeredCount: number; applicableCount: number; fraction: number }> {
-  const db = getRawPrisma();
-  const template = await db.surveyTemplate.findFirst({
-    where: { id: templateId, engagementId },
-    include: { questions: { select: { id: true, scoreFamily: true } } },
-  });
-  if (!template) throw new Error("Unknown template for this engagement");
+  // Reads RLS'd tables (SurveyTemplate, Answer, QuestionWeighting) via the
+  // admin door — set the engagement GUC so FORCE'd RLS admits these rows.
+  return getRawPrisma().$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.engagement_id', ${engagementId}, TRUE)`;
 
-  const answers = responseId
-    ? await db.answer.findMany({
-        where: { responseId, engagementId },
-        select: { questionId: true, isNA: true, numericValue: true, textValue: true, boolValue: true },
-      })
-    : [];
+    const template = await tx.surveyTemplate.findFirst({
+      where: { id: templateId, engagementId },
+      include: { questions: { select: { id: true, scoreFamily: true } } },
+    });
+    if (!template) throw new Error("Unknown template for this engagement");
 
-  const scored = template.questions.some((q) => q.scoreFamily !== "NONE");
-  if (!scored) {
-    // Demographics/Finance: applicable = every field; answered = any value (Excel COUNTA).
-    const answeredCount = answers.filter(
-      (a) => a.isNA || a.numericValue !== null || a.textValue !== null || a.boolValue !== null,
-    ).length;
-    const applicableCount = template.questions.length;
+    const answers = responseId
+      ? await tx.answer.findMany({
+          where: { responseId, engagementId },
+          select: { questionId: true, isNA: true, numericValue: true, textValue: true, boolValue: true },
+        })
+      : [];
+
+    const scored = template.questions.some((q) => q.scoreFamily !== "NONE");
+    if (!scored) {
+      // Demographics/Finance: applicable = every field; answered = any value (Excel COUNTA).
+      const answeredCount = answers.filter(
+        (a) => a.isNA || a.numericValue !== null || a.textValue !== null || a.boolValue !== null,
+      ).length;
+      const applicableCount = template.questions.length;
+      return { answeredCount, applicableCount, fraction: applicableCount === 0 ? 0 : answeredCount / applicableCount };
+    }
+
+    // IT/BV: applicable = weighted>0 report questions + non-report; answered = numeric (N/A ≠ answered).
+    const weightedCount = await tx.questionWeighting.count({
+      where: {
+        engagementId,
+        importanceRating: { gt: 0 },
+        question: { templateId, scoreFamily: { in: ["IT", "BUSINESS"] } },
+      },
+    });
+    const nonReportCount = template.questions.filter((q) => q.scoreFamily === "IT_NON_REPORT").length;
+    const applicableCount = weightedCount + nonReportCount;
+    const answeredCount = answers.filter((a) => !a.isNA && a.numericValue !== null).length;
     return { answeredCount, applicableCount, fraction: applicableCount === 0 ? 0 : answeredCount / applicableCount };
-  }
-
-  // IT/BV: applicable = weighted>0 report questions + non-report; answered = numeric (N/A ≠ answered).
-  const weightedCount = await db.questionWeighting.count({
-    where: {
-      engagementId,
-      importanceRating: { gt: 0 },
-      question: { templateId, scoreFamily: { in: ["IT", "BUSINESS"] } },
-    },
   });
-  const nonReportCount = template.questions.filter((q) => q.scoreFamily === "IT_NON_REPORT").length;
-  const applicableCount = weightedCount + nonReportCount;
-  const answeredCount = answers.filter((a) => !a.isNA && a.numericValue !== null).length;
-  return { answeredCount, applicableCount, fraction: applicableCount === 0 ? 0 : answeredCount / applicableCount };
 }
 
 /**

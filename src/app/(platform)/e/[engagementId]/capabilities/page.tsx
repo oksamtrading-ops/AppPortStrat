@@ -82,6 +82,7 @@ export default async function CapabilitiesPage({
     }));
 
   const canEdit = (ctx.role === "ENGAGEMENT_LEAD" || ctx.role === "CONSULTANT") && !ctx.readOnly;
+  const canDelete = ctx.role === "ENGAGEMENT_LEAD" && !ctx.readOnly;
   const nodeCount = nodes.length;
   const activeView = view === "heatmap" ? "heatmap" : "cards";
 
@@ -145,7 +146,7 @@ export default async function CapabilitiesPage({
           splitYellow={engagement.splitHeatmapYellow}
         />
       ) : (
-        <CapabilityBoard engagementId={engagementId} sections={sections} canEdit={canEdit} />
+        <CapabilityBoard engagementId={engagementId} sections={sections} canEdit={canEdit} canDelete={canDelete} />
       )}
     </div>
   );

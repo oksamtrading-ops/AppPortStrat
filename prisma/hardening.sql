@@ -70,3 +70,45 @@ BEGIN
     );
   END LOOP;
 END $$;
+
+-- 6. Boot-assertion helper: the app calls this at startup (instrumentation.ts)
+--    and refuses to serve in a deployed environment if the backstop is not
+--    actually active. Returns a reason string ('' = healthy):
+--      - 'rls-not-enabled'          a tenant table has no row-level security
+--      - 'runtime-role-bypasses-rls' the CONNECTED role bypasses RLS (it owns
+--                                    the tenant tables, or has BYPASSRLS/super)
+--    Postgres table owners and BYPASSRLS/superuser roles bypass ENABLE'd RLS,
+--    so the runtime DATABASE_URL must use the non-owner aps_runtime role for
+--    the backstop to bite.
+CREATE OR REPLACE FUNCTION aps_rls_inactive_reason() RETURNS text AS $$
+DECLARE
+  tables text[] := ARRAY[
+    'Application','CapabilityNode','SurveyTemplate','SurveyQuestion','GuidelineAnchor',
+    'QuestionWeighting','ThresholdConfig','SurveyAssignment','SurveyResponse','Answer',
+    'DispositionResult','DispositionOverride','CostRecord','OptionList','OptionItem','AuditEvent'
+  ];
+  unprotected int;
+  bypasses boolean;
+BEGIN
+  SELECT count(*) INTO unprotected
+  FROM unnest(tables) AS t(name)
+  JOIN pg_class c ON c.relname = t.name
+  WHERE NOT c.relrowsecurity;
+  IF unprotected > 0 THEN RETURN 'rls-not-enabled'; END IF;
+
+  SELECT bool_or(is_super OR is_bypass OR is_owner) INTO bypasses
+  FROM (
+    SELECT
+      r.rolsuper AS is_super,
+      r.rolbypassrls AS is_bypass,
+      EXISTS (
+        SELECT 1 FROM pg_class c JOIN pg_roles o ON o.oid = c.relowner
+        WHERE c.relname = ANY(tables) AND o.rolname = current_user
+      ) AS is_owner
+    FROM pg_roles r WHERE r.rolname = current_user
+  ) s;
+  IF bypasses THEN RETURN 'runtime-role-bypasses-rls'; END IF;
+
+  RETURN '';
+END;
+$$ LANGUAGE plpgsql STABLE;

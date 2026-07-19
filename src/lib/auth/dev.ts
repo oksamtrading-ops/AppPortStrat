@@ -25,9 +25,14 @@ export const DEV_USERS: readonly DevUser[] = [
 export const DEV_COOKIE_NAME = "aps-dev-user";
 
 function secret(): string {
-  // Any value works for local development; the signature only has to defeat
-  // casual cookie editing, and dev mode cannot exist in deployed environments.
-  return process.env.DEV_AUTH_SECRET || "aps-dev-secret";
+  // Fail-closed: require an explicit secret even in dev, so a shared non-Clerk
+  // environment can't be spoofed with a well-known constant. Dev mode itself
+  // cannot exist in a deployed environment (see auth/mode.ts).
+  const value = process.env.DEV_AUTH_SECRET;
+  if (!value) {
+    throw new Error("DEV_AUTH_SECRET must be set when running in dev-auth mode (see .env.example)");
+  }
+  return value;
 }
 
 function sign(value: string): string {

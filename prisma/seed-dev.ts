@@ -11,6 +11,7 @@ import { resolveAuthMode, readAuthEnv } from "../src/lib/auth/mode";
 import { DEV_USERS } from "../src/lib/auth/dev";
 import { createEngagementWithConfig } from "../src/lib/db/provision";
 import { getRawPrisma } from "../src/lib/db/prisma";
+import { getScopedDb } from "../src/lib/db/scoped";
 
 async function main() {
   let mode: string;
@@ -62,8 +63,19 @@ async function main() {
     memberships.set(user.id, m.id);
   }
 
+  // Per-engagement rows go through a scoped Lead client so they satisfy FORCE'd
+  // row-level security (the GUC is set per operation) — same path the app uses.
+  const sdb = getScopedDb({
+    engagementId: engagement.id,
+    membershipId: memberships.get("dev:lead")!,
+    role: "ENGAGEMENT_LEAD",
+    readOnly: false,
+    clerkUserId: "dev:lead",
+    actorDisplay: "Dev Lead",
+  });
+
   // Small capability tree.
-  const l0 = await db.capabilityNode.create({
+  const l0 = await sdb.capabilityNode.create({
     data: { engagementId: engagement.id, level: "L0", name: "Enterprise Operations" },
   });
   const l1Names = ["Finance", "Human Resources", "Information Technology", "Sales & Service"];
@@ -75,11 +87,11 @@ async function main() {
   };
   const l2Nodes: { id: string; name: string }[] = [];
   for (const l1Name of l1Names) {
-    const l1 = await db.capabilityNode.create({
+    const l1 = await sdb.capabilityNode.create({
       data: { engagementId: engagement.id, parentId: l0.id, level: "L1", name: l1Name },
     });
     for (const l2Name of l2ByL1[l1Name]) {
-      const l2 = await db.capabilityNode.create({
+      const l2 = await sdb.capabilityNode.create({
         data: { engagementId: engagement.id, parentId: l1.id, level: "L2", name: l2Name },
       });
       l2Nodes.push({ id: l2.id, name: l2Name });
@@ -110,7 +122,7 @@ async function main() {
   const appIds: string[] = [];
   let appNumber = 1;
   for (const a of apps) {
-    const app = await db.application.create({
+    const app = await sdb.application.create({
       data: {
         engagementId: engagement.id,
         appNumber: appNumber++,
@@ -128,7 +140,7 @@ async function main() {
   }
 
   // Sample survey answers for the first four apps (deterministic pattern).
-  const templates = await db.surveyTemplate.findMany({
+  const templates = await sdb.surveyTemplate.findMany({
     where: { engagementId: engagement.id, type: { in: ["IT_HEALTH", "BUSINESS_VALUE"] } },
     include: { questions: { where: { scoreFamily: { in: ["IT", "BUSINESS", "IT_NON_REPORT"] } } } },
   });
@@ -136,7 +148,7 @@ async function main() {
   for (let i = 0; i < 4; i++) {
     const applicationId = appIds[i];
     for (const template of templates) {
-      const response = await db.surveyResponse.create({
+      const response = await sdb.surveyResponse.create({
         data: {
           engagementId: engagement.id,
           applicationId,
@@ -149,7 +161,7 @@ async function main() {
       for (const question of template.questions) {
         // Deterministic spread of 1–5 that differs per app.
         const value = ((i * 7 + q * 3) % 5) + 1;
-        await db.answer.create({
+        await sdb.answer.create({
           data: {
             engagementId: engagement.id,
             responseId: response.id,
@@ -166,7 +178,7 @@ async function main() {
   const respondentMembershipId = memberships.get("dev:respondent")!;
   for (const template of templates) {
     for (const applicationId of appIds.slice(4, 6)) {
-      await db.surveyAssignment.create({
+      await sdb.surveyAssignment.create({
         data: {
           engagementId: engagement.id,
           applicationId,

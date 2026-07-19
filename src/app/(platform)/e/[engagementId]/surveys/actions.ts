@@ -5,9 +5,11 @@ import { requireEngagementContext } from "@/lib/auth/context";
 import { validateAnswer, formatScore } from "@/lib/methodology";
 import { writeAudit } from "@/lib/audit";
 import { recomputeApplication } from "@/lib/recompute";
-import { computeSurveyCompletion } from "@/lib/db/admin";
+import { computeSurveyCompletion, rateLimit } from "@/lib/db/admin";
+import type { EngagementContext, ScopedDb } from "@/lib/db/scoped";
 
-const rawValueSchema = z.union([z.number(), z.string(), z.boolean(), z.null()]);
+// Free-text answers are bounded so a respondent cannot persist multi-MB blobs.
+const rawValueSchema = z.union([z.number(), z.string().max(10_000), z.boolean(), z.null()]);
 
 const saveSchema = z.object({
   engagementId: z.string().min(1),
@@ -32,9 +34,37 @@ export type SaveAnswerResult =
  * from the scoped client itself: the application read below carries their
  * assignment predicate, so an unassigned app resolves to null → error.
  */
+/**
+ * A Client Respondent may only write to the exact survey templates assigned to
+ * them for an application. The scoped guard's assignment predicate is
+ * app-level (`assignments: { some }`), which lets a respondent assigned ANY
+ * template on an app reach OTHER templates on the same app — so the specific
+ * (application, template, membership) assignment is verified here. Consultants
+ * and Leads (workshop mode) are unrestricted. Returns true when allowed.
+ */
+async function respondentMayWriteTemplate(
+  ctx: EngagementContext,
+  db: ScopedDb,
+  applicationId: string,
+  templateId: string,
+): Promise<boolean> {
+  if (ctx.role !== "CLIENT_RESPONDENT") return true;
+  const assignment = await db.surveyAssignment.findFirst({
+    where: { applicationId, templateId, membershipId: ctx.membershipId },
+    select: { id: true },
+  });
+  return assignment !== null;
+}
+
 export async function saveAnswer(input: z.infer<typeof saveSchema>): Promise<SaveAnswerResult> {
   const parsed = saveSchema.parse(input);
   const { ctx, db, engagement } = await requireEngagementContext(parsed.engagementId);
+
+  // Every scored answer save triggers a recompute; throttle per member so a
+  // single client cannot drive sustained DB write load (300 saves / minute is
+  // far above real autosave cadence).
+  const limit = await rateLimit(`answer:${ctx.membershipId}`, 300, 60);
+  if (!limit.allowed) return { ok: false, error: "You're saving too fast — please pause a moment and try again" };
 
   const [application, question] = await Promise.all([
     db.application.findUnique({ where: { id: parsed.applicationId }, select: { id: true } }),
@@ -42,6 +72,9 @@ export async function saveAnswer(input: z.infer<typeof saveSchema>): Promise<Sav
   ]);
   if (!application || !question || question.templateId !== parsed.templateId) {
     return { ok: false, error: "Not available" };
+  }
+  if (!(await respondentMayWriteTemplate(ctx, db, application.id, parsed.templateId))) {
+    return { ok: false, error: "This survey is not assigned to you" };
   }
 
   // OPTION questions validate against the engagement's option list.
@@ -152,6 +185,9 @@ export async function setSurveyStatus(input: {
 
   const application = await db.application.findUnique({ where: { id: parsed.applicationId }, select: { id: true } });
   if (!application) throw new Error("Not available");
+  if (!(await respondentMayWriteTemplate(ctx, db, application.id, parsed.templateId))) {
+    throw new Error("This survey is not assigned to you");
+  }
 
   const response = await db.surveyResponse.upsert({
     where: { applicationId_templateId: { applicationId: application.id, templateId: parsed.templateId } },

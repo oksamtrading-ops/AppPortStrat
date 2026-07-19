@@ -12,6 +12,9 @@ import { writeAudit } from "@/lib/audit";
 export async function GET(_req: Request, { params }: { params: Promise<{ engagementId: string }> }) {
   const { engagementId } = await params;
   const { ctx, db, engagement } = await requireEngagementContext(engagementId, "CONSULTANT");
+  const { tooManyRequests } = await import("@/lib/rate-limit-route");
+  const limited = await tooManyRequests(`export:${ctx.membershipId}`, 30, 60);
+  if (limited) return limited;
 
   const [applications, nodes] = await Promise.all([
     db.application.findMany({

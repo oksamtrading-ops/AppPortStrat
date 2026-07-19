@@ -9,6 +9,24 @@ import { writeAudit } from "@/lib/audit";
 import { recomputeApplication } from "@/lib/recompute";
 import { createApplicationWithNumber } from "@/lib/db/applications";
 
+/**
+ * Per-field length limits — the single source of truth shared by the
+ * interactive form (below) and the paste importer, so the two paths can never
+ * drift into inconsistent bounds (security review finding: imports bypassed
+ * the form's per-field caps).
+ */
+const FIELD_LIMITS = {
+  name: 300,
+  acronym: 50,
+  description: 4000,
+  applicationType: 200,
+  businessFunctionDetail: 1000,
+  target: 500,
+  actionPlanAssignment: 200,
+  actionPlanJustification: 2000,
+  comments: 4000,
+} as const;
+
 const optionalText = (max: number) =>
   z
     .string()
@@ -18,20 +36,26 @@ const optionalText = (max: number) =>
     .nullable()
     .optional();
 
+/** Clamp an imported cell to its field limit (importers reject nothing; they trim). */
+const clamp = (value: string | undefined, max: number): string | null => {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed.slice(0, max) : null;
+};
+
 const applicationSchema = z.object({
   engagementId: z.string().min(1),
   applicationId: z.string().min(1).optional(), // absent = create
-  name: z.string().trim().min(1).max(300),
-  acronym: optionalText(50),
-  description: optionalText(4000),
-  applicationType: optionalText(200),
-  businessFunctionDetail: optionalText(1000),
-  target: optionalText(500),
+  name: z.string().trim().min(1).max(FIELD_LIMITS.name),
+  acronym: optionalText(FIELD_LIMITS.acronym),
+  description: optionalText(FIELD_LIMITS.description),
+  applicationType: optionalText(FIELD_LIMITS.applicationType),
+  businessFunctionDetail: optionalText(FIELD_LIMITS.businessFunctionDetail),
+  target: optionalText(FIELD_LIMITS.target),
   meetsFutureState: z.enum(["YES", "NO", "PARTIAL"]).nullable().optional(),
-  actionPlanAssignment: optionalText(200),
-  actionPlanJustification: optionalText(2000),
+  actionPlanAssignment: optionalText(FIELD_LIMITS.actionPlanAssignment),
+  actionPlanJustification: optionalText(FIELD_LIMITS.actionPlanJustification),
   missionCritical: z.boolean(),
-  comments: optionalText(4000),
+  comments: optionalText(FIELD_LIMITS.comments),
   inScope: z.boolean(),
   isUtilized: z.boolean(),
   isReplaced: z.boolean(),
@@ -170,13 +194,13 @@ export async function importApplications(input: { engagementId: string; text: st
     const capabilityNodeId = resolveCapability(record.l0, record.l1, record.l2);
     if ((record.l0 || record.l1 || record.l2) && !capabilityNodeId) unmappedCapabilities += 1;
     await createApplicationWithNumber(db, ctx.engagementId, {
-      name: record.name,
-      acronym: record.acronym ?? null,
-      description: record.description ?? null,
-      applicationType: record.applicationType ?? null,
-      businessFunctionDetail: record.businessFunctionDetail ?? null,
-      target: record.target ?? null,
-      comments: record.comments ?? null,
+      name: record.name.slice(0, FIELD_LIMITS.name),
+      acronym: clamp(record.acronym, FIELD_LIMITS.acronym),
+      description: clamp(record.description, FIELD_LIMITS.description),
+      applicationType: clamp(record.applicationType, FIELD_LIMITS.applicationType),
+      businessFunctionDetail: clamp(record.businessFunctionDetail, FIELD_LIMITS.businessFunctionDetail),
+      target: clamp(record.target, FIELD_LIMITS.target),
+      comments: clamp(record.comments, FIELD_LIMITS.comments),
       missionCritical: parseBooleanCell(record.missionCritical, false),
       inScope: parseBooleanCell(record.inScope, true),
       isUtilized: parseBooleanCell(record.isUtilized, true),

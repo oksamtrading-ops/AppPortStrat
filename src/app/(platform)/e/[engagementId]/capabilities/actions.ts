@@ -83,7 +83,9 @@ export async function deleteCapabilityNode(formData: FormData) {
   const parsed = z
     .object({ engagementId: z.string().min(1), nodeId: z.string().min(1) })
     .parse({ engagementId: formData.get("engagementId"), nodeId: formData.get("nodeId") });
-  const { ctx, db } = await requireEngagementContext(parsed.engagementId, "CONSULTANT");
+  // Deleting a capability cascades an entire L0/L1/L2 subtree — Lead-only,
+  // consistent with deleteApplication (security review: was Consultant-gated).
+  const { ctx, db } = await requireEngagementContext(parsed.engagementId, "ENGAGEMENT_LEAD");
 
   const node = await db.capabilityNode.findUnique({ where: { id: parsed.nodeId } });
   if (!node) throw new Error("Unknown node");
@@ -162,6 +164,7 @@ export async function pasteCapabilities(formData: FormData) {
   const { ctx, db } = await requireEngagementContext(parsed.engagementId, "CONSULTANT");
 
   const { tree, rowCount } = parseCapabilityPaste(parsed.text);
+  if (rowCount > 5000) throw new Error("Paste is limited to 5,000 rows at a time");
   let created = 0;
 
   for (const [l0Name, l1Map] of tree) {
