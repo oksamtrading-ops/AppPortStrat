@@ -207,23 +207,28 @@ async function main() {
   }
 
   // Capability reference library — hand-authored industry starter packs.
-  // Idempotent by (industry, name): existing packs are never touched (content
-  // revisions ship as new versions via the admin/promote flows, not the seed).
+  // Idempotent by seed revision: each pack's `revision` is stamped into the
+  // attribution; a pack is (re)published as a NEW version only when that
+  // revision has never been seeded. Existing versions — including packs
+  // promoted from engagements — are never touched.
   const { createCapabilityLibrary } = await import("../src/lib/db/library");
-  const libraryData: { packs: import("../src/lib/db/library").CreateLibraryInput[] } = JSON.parse(
-    readFileSync(join(__dirname, "seed-data", "capability-libraries.json"), "utf8"),
-  );
+  const libraryData: { packs: (import("../src/lib/db/library").CreateLibraryInput & { revision: number })[] } =
+    JSON.parse(readFileSync(join(__dirname, "seed-data", "capability-libraries.json"), "utf8"));
   for (const pack of libraryData.packs) {
+    const revisionTag = `[seed r${pack.revision}]`;
     const existing = await prisma.capabilityLibrary.findFirst({
-      where: { industry: pack.industry, name: pack.name },
-      select: { id: true, version: true },
+      where: { industry: pack.industry, name: pack.name, attribution: { endsWith: revisionTag } },
+      select: { version: true },
     });
     if (existing) {
-      console.log(`Library pack exists, skipping: ${pack.industry} / ${pack.name} (v${existing.version})`);
+      console.log(`Library pack up to date, skipping: ${pack.industry} / ${pack.name} (v${existing.version}, r${pack.revision})`);
       continue;
     }
-    const created = await createCapabilityLibrary(pack);
-    console.log(`Seeded library pack: ${pack.industry} / ${pack.name} (v${created.version})`);
+    const created = await createCapabilityLibrary({
+      ...pack,
+      attribution: `${pack.attribution ?? "Hand-authored"} ${revisionTag}`,
+    });
+    console.log(`Seeded library pack: ${pack.industry} / ${pack.name} (v${created.version}, r${pack.revision})`);
   }
 
   await prisma.$disconnect();
