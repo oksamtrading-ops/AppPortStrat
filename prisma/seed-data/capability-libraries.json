@@ -1135,6 +1135,768 @@
           ]
         }
       ]
+    },
+    {
+      "industry": "Healthcare",
+      "name": "Healthcare Provider Starter",
+      "revision": 1,
+      "description": "Hospital and health-system capability starting point. Pair with the Cross-Industry Core for corporate functions detail.",
+      "attribution": "Hand-authored from public industry-standard capability vocabulary",
+      "tree": [
+        {
+          "code": "HCP.ACC",
+          "name": "Patient Access & Engagement",
+          "description": "Getting patients to the right care.",
+          "children": [
+            {
+              "code": "HCP.ACC.SCH",
+              "name": "Scheduling & Registration",
+              "description": "Appointment booking, registration, and check-in."
+            },
+            {
+              "code": "HCP.ACC.PRT",
+              "name": "Patient Portal & Engagement",
+              "description": "Digital self-service, messaging, and reminders."
+            },
+            {
+              "code": "HCP.ACC.REF",
+              "name": "Referral Management",
+              "description": "Inbound and outbound referral coordination."
+            }
+          ]
+        },
+        {
+          "code": "HCP.CLN",
+          "name": "Clinical Care Delivery",
+          "description": "Diagnosing and treating patients.",
+          "children": [
+            {
+              "code": "HCP.CLN.EHR",
+              "name": "Clinical Documentation",
+              "description": "Inpatient and ambulatory encounter documentation (EHR)."
+            },
+            {
+              "code": "HCP.CLN.ORD",
+              "name": "Orders & Results Management",
+              "description": "Clinical orders, results routing, and decision support."
+            },
+            {
+              "code": "HCP.CLN.MED",
+              "name": "Medication Management",
+              "description": "Pharmacy, prescribing, and medication administration."
+            },
+            {
+              "code": "HCP.CLN.SUR",
+              "name": "Surgical & Procedural Services",
+              "description": "Perioperative scheduling and documentation."
+            },
+            {
+              "code": "HCP.CLN.CCO",
+              "name": "Care Coordination & Transitions",
+              "description": "Care plans, discharge, and cross-provider coordination."
+            }
+          ]
+        },
+        {
+          "code": "HCP.DIA",
+          "name": "Diagnostics",
+          "description": "Producing diagnostic information.",
+          "children": [
+            {
+              "code": "HCP.DIA.LAB",
+              "name": "Laboratory Services",
+              "description": "Specimen management, testing, and results."
+            },
+            {
+              "code": "HCP.DIA.IMG",
+              "name": "Medical Imaging",
+              "description": "Imaging acquisition, PACS, and radiology reporting."
+            },
+            {
+              "code": "HCP.DIA.PTH",
+              "name": "Pathology",
+              "description": "Anatomic pathology workflow and reporting."
+            }
+          ]
+        },
+        {
+          "code": "HCP.RCM",
+          "name": "Revenue Cycle Management",
+          "description": "Turning care into compliant revenue.",
+          "children": [
+            {
+              "code": "HCP.RCM.CLR",
+              "name": "Financial Clearance",
+              "description": "Eligibility, authorization, and estimates."
+            },
+            {
+              "code": "HCP.RCM.COD",
+              "name": "Charge Capture & Coding",
+              "description": "Clinical coding and charge integrity."
+            },
+            {
+              "code": "HCP.RCM.BIL",
+              "name": "Claims & Billing",
+              "description": "Claim submission and patient billing."
+            },
+            {
+              "code": "HCP.RCM.DEN",
+              "name": "Payments & Denials Management",
+              "description": "Remittance posting, denials, and appeals."
+            }
+          ]
+        },
+        {
+          "code": "HCP.POP",
+          "name": "Population Health & Quality",
+          "description": "Managing outcomes beyond the encounter.",
+          "children": [
+            {
+              "code": "HCP.POP.CMG",
+              "name": "Care & Disease Management",
+              "description": "Risk stratification and chronic-care programs."
+            },
+            {
+              "code": "HCP.POP.QLT",
+              "name": "Quality & Safety Reporting",
+              "description": "Clinical quality measures and patient-safety reporting."
+            },
+            {
+              "code": "HCP.POP.ANA",
+              "name": "Population Analytics",
+              "description": "Cohort analytics and outcomes measurement."
+            }
+          ]
+        },
+        {
+          "code": "HCP.COR",
+          "name": "Corporate Functions",
+          "description": "Shared enterprise functions — see Cross-Industry Core for detail.",
+          "children": [
+            {
+              "code": "HCP.COR.FIN",
+              "name": "Finance",
+              "description": "Accounting, planning, treasury, and tax."
+            },
+            {
+              "code": "HCP.COR.HR",
+              "name": "Human Resources",
+              "description": "Workforce administration and talent."
+            },
+            {
+              "code": "HCP.COR.IT",
+              "name": "Information Technology",
+              "description": "Applications, infrastructure, security, and data."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "industry": "Energy & Utilities",
+      "name": "Utilities Starter",
+      "revision": 1,
+      "description": "Electric, gas, and water utility capability starting point. Pair with the Cross-Industry Core for corporate functions detail.",
+      "attribution": "Hand-authored from public industry-standard capability vocabulary",
+      "tree": [
+        {
+          "code": "UTL.GEN",
+          "name": "Generation & Production",
+          "description": "Producing energy or sourcing supply.",
+          "children": [
+            {
+              "code": "UTL.GEN.OPS",
+              "name": "Generation Operations",
+              "description": "Plant operations and dispatch."
+            },
+            {
+              "code": "UTL.GEN.FUE",
+              "name": "Fuel & Supply Management",
+              "description": "Fuel procurement, logistics, and inventory."
+            },
+            {
+              "code": "UTL.GEN.REN",
+              "name": "Renewables & Storage Management",
+              "description": "Distributed generation, renewables, and storage."
+            }
+          ]
+        },
+        {
+          "code": "UTL.NET",
+          "name": "Networks & Grid",
+          "description": "Moving energy or water to customers.",
+          "children": [
+            {
+              "code": "UTL.NET.OPS",
+              "name": "Grid Operations & Control",
+              "description": "Real-time network monitoring and switching."
+            },
+            {
+              "code": "UTL.NET.OUT",
+              "name": "Outage Management",
+              "description": "Outage detection, restoration, and communication."
+            },
+            {
+              "code": "UTL.NET.MNT",
+              "name": "Network Asset Maintenance",
+              "description": "Inspection, maintenance, and reliability programs."
+            },
+            {
+              "code": "UTL.NET.PLN",
+              "name": "Network Planning & Construction",
+              "description": "Capacity planning, design, and build."
+            }
+          ]
+        },
+        {
+          "code": "UTL.TRD",
+          "name": "Energy Trading & Markets",
+          "description": "Buying and selling in wholesale markets.",
+          "children": [
+            {
+              "code": "UTL.TRD.TRD",
+              "name": "Trading & Hedging",
+              "description": "Wholesale trading and portfolio hedging."
+            },
+            {
+              "code": "UTL.TRD.SET",
+              "name": "Market Settlements",
+              "description": "Market reconciliation and settlement."
+            },
+            {
+              "code": "UTL.TRD.FOR",
+              "name": "Load & Price Forecasting",
+              "description": "Demand and market price forecasting."
+            }
+          ]
+        },
+        {
+          "code": "UTL.RET",
+          "name": "Customer & Retail",
+          "description": "Serving and billing customers.",
+          "children": [
+            {
+              "code": "UTL.RET.MTR",
+              "name": "Metering & Meter Data",
+              "description": "Meter operations and meter-data management."
+            },
+            {
+              "code": "UTL.RET.BIL",
+              "name": "Billing & Collections",
+              "description": "Rating, invoicing, payments, and arrears."
+            },
+            {
+              "code": "UTL.RET.CAR",
+              "name": "Customer Care",
+              "description": "Contact handling, moves, and complaints."
+            },
+            {
+              "code": "UTL.RET.DSM",
+              "name": "Energy Programs & Demand Response",
+              "description": "Efficiency programs and demand-side management."
+            }
+          ]
+        },
+        {
+          "code": "UTL.FLD",
+          "name": "Field Service",
+          "description": "Work on the network and at premises.",
+          "children": [
+            {
+              "code": "UTL.FLD.WRK",
+              "name": "Work & Crew Management",
+              "description": "Work orders, permits, and crew assignment."
+            },
+            {
+              "code": "UTL.FLD.SCH",
+              "name": "Mobile Workforce Scheduling",
+              "description": "Dispatch, routing, and mobile enablement."
+            }
+          ]
+        },
+        {
+          "code": "UTL.COR",
+          "name": "Corporate Functions",
+          "description": "Shared enterprise functions — see Cross-Industry Core for detail.",
+          "children": [
+            {
+              "code": "UTL.COR.FIN",
+              "name": "Finance",
+              "description": "Accounting, planning, treasury, and tax."
+            },
+            {
+              "code": "UTL.COR.HR",
+              "name": "Human Resources",
+              "description": "Workforce administration and talent."
+            },
+            {
+              "code": "UTL.COR.IT",
+              "name": "Information Technology",
+              "description": "Applications, infrastructure, security, and data."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "industry": "Telecommunications",
+      "name": "Telecommunications Starter",
+      "revision": 1,
+      "description": "Telco and connectivity provider capability starting point. Pair with the Cross-Industry Core for corporate functions detail.",
+      "attribution": "Hand-authored from public industry-standard capability vocabulary",
+      "tree": [
+        {
+          "code": "TEL.PRD",
+          "name": "Product & Offer Management",
+          "description": "What the operator sells.",
+          "children": [
+            {
+              "code": "TEL.PRD.CAT",
+              "name": "Product Catalog Management",
+              "description": "Commercial and technical catalog definitions."
+            },
+            {
+              "code": "TEL.PRD.OFF",
+              "name": "Offer & Pricing Management",
+              "description": "Bundles, promotions, and price plans."
+            },
+            {
+              "code": "TEL.PRD.WHL",
+              "name": "Wholesale & Partner Products",
+              "description": "Wholesale offers and partner propositions."
+            }
+          ]
+        },
+        {
+          "code": "TEL.CUS",
+          "name": "Customer Management",
+          "description": "Winning, billing, and keeping subscribers.",
+          "children": [
+            {
+              "code": "TEL.CUS.SAL",
+              "name": "Sales & Ordering",
+              "description": "Lead-to-order across channels."
+            },
+            {
+              "code": "TEL.CUS.CAR",
+              "name": "Customer Care & Retention",
+              "description": "Assurance-facing care, complaints, and churn management."
+            },
+            {
+              "code": "TEL.CUS.BIL",
+              "name": "Charging, Billing & Revenue Management",
+              "description": "Usage rating, invoicing, and revenue assurance."
+            },
+            {
+              "code": "TEL.CUS.COL",
+              "name": "Collections & Credit",
+              "description": "Credit checks, dunning, and recovery."
+            }
+          ]
+        },
+        {
+          "code": "TEL.SVC",
+          "name": "Service Management",
+          "description": "Delivering and assuring services.",
+          "children": [
+            {
+              "code": "TEL.SVC.FUL",
+              "name": "Service Order Orchestration",
+              "description": "Decomposition, provisioning, and activation."
+            },
+            {
+              "code": "TEL.SVC.ASS",
+              "name": "Service Assurance",
+              "description": "Fault, incident, and problem management."
+            },
+            {
+              "code": "TEL.SVC.QOS",
+              "name": "Service Quality Management",
+              "description": "SLA monitoring and service performance."
+            }
+          ]
+        },
+        {
+          "code": "TEL.NET",
+          "name": "Network & Resource Management",
+          "description": "The network itself.",
+          "children": [
+            {
+              "code": "TEL.NET.PLN",
+              "name": "Network Planning & Build",
+              "description": "Coverage/capacity planning and rollout."
+            },
+            {
+              "code": "TEL.NET.OPS",
+              "name": "Network Operations & Performance",
+              "description": "NOC operations and performance management."
+            },
+            {
+              "code": "TEL.NET.INV",
+              "name": "Network Inventory & Configuration",
+              "description": "Physical/logical inventory and configuration."
+            }
+          ]
+        },
+        {
+          "code": "TEL.PTN",
+          "name": "Partner & Interconnect",
+          "description": "Working with other carriers and partners.",
+          "children": [
+            {
+              "code": "TEL.PTN.ICX",
+              "name": "Interconnect & Roaming Settlements",
+              "description": "Inter-carrier and roaming billing."
+            },
+            {
+              "code": "TEL.PTN.MGT",
+              "name": "Partner Management",
+              "description": "Onboarding and managing channel/content partners."
+            }
+          ]
+        },
+        {
+          "code": "TEL.COR",
+          "name": "Corporate Functions",
+          "description": "Shared enterprise functions — see Cross-Industry Core for detail.",
+          "children": [
+            {
+              "code": "TEL.COR.FIN",
+              "name": "Finance",
+              "description": "Accounting, planning, treasury, and tax."
+            },
+            {
+              "code": "TEL.COR.HR",
+              "name": "Human Resources",
+              "description": "Workforce administration and talent."
+            },
+            {
+              "code": "TEL.COR.IT",
+              "name": "Information Technology",
+              "description": "Applications, infrastructure, security, and data."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "industry": "Life Sciences",
+      "name": "Life Sciences Starter",
+      "revision": 1,
+      "description": "Pharma, biotech, and medtech capability starting point. Pair with the Cross-Industry Core for corporate functions detail.",
+      "attribution": "Hand-authored from public industry-standard capability vocabulary",
+      "tree": [
+        {
+          "code": "LSC.RND",
+          "name": "Discovery & Research",
+          "description": "Finding and validating candidates.",
+          "children": [
+            {
+              "code": "LSC.RND.DIS",
+              "name": "Discovery & Target Research",
+              "description": "Target identification and candidate screening."
+            },
+            {
+              "code": "LSC.RND.PRE",
+              "name": "Preclinical Research",
+              "description": "In-vitro/in-vivo studies and safety assessment."
+            },
+            {
+              "code": "LSC.RND.DAT",
+              "name": "Research Data Management",
+              "description": "Lab informatics, ELN, and research data."
+            }
+          ]
+        },
+        {
+          "code": "LSC.CLN",
+          "name": "Clinical Development",
+          "description": "Proving safety and efficacy in humans.",
+          "children": [
+            {
+              "code": "LSC.CLN.DES",
+              "name": "Trial Design & Startup",
+              "description": "Protocol design, site selection, and startup."
+            },
+            {
+              "code": "LSC.CLN.EXE",
+              "name": "Trial Execution & Monitoring",
+              "description": "Site management, monitoring, and patient engagement."
+            },
+            {
+              "code": "LSC.CLN.CDM",
+              "name": "Clinical Data & Biostatistics",
+              "description": "EDC, data management, and statistical analysis."
+            },
+            {
+              "code": "LSC.CLN.SUP",
+              "name": "Clinical Trial Supply",
+              "description": "IMP forecasting, packaging, and distribution."
+            }
+          ]
+        },
+        {
+          "code": "LSC.REG",
+          "name": "Regulatory Affairs",
+          "description": "Getting and keeping approvals.",
+          "children": [
+            {
+              "code": "LSC.REG.SUB",
+              "name": "Submissions & Registrations",
+              "description": "Dossier assembly and health-authority submissions."
+            },
+            {
+              "code": "LSC.REG.LBL",
+              "name": "Labeling Management",
+              "description": "Global label content and change control."
+            },
+            {
+              "code": "LSC.REG.INT",
+              "name": "Regulatory Intelligence",
+              "description": "Tracking requirements across markets."
+            }
+          ]
+        },
+        {
+          "code": "LSC.MFG",
+          "name": "GxP Manufacturing & Quality",
+          "description": "Making compliant product.",
+          "children": [
+            {
+              "code": "LSC.MFG.PRD",
+              "name": "GxP Production",
+              "description": "Regulated manufacturing execution."
+            },
+            {
+              "code": "LSC.MFG.QUA",
+              "name": "Quality Assurance & Batch Release",
+              "description": "Deviations, CAPA, and batch disposition."
+            },
+            {
+              "code": "LSC.MFG.SER",
+              "name": "Serialization & Traceability",
+              "description": "Unit-level serialization and supply-chain traceability."
+            },
+            {
+              "code": "LSC.MFG.VAL",
+              "name": "Validation & Compliance",
+              "description": "Equipment/computer system validation."
+            }
+          ]
+        },
+        {
+          "code": "LSC.SFT",
+          "name": "Pharmacovigilance & Safety",
+          "description": "Monitoring product safety.",
+          "children": [
+            {
+              "code": "LSC.SFT.CSE",
+              "name": "Adverse Event Case Management",
+              "description": "Case intake, processing, and reporting."
+            },
+            {
+              "code": "LSC.SFT.SIG",
+              "name": "Signal Detection & Risk Management",
+              "description": "Safety signal analysis and risk plans."
+            }
+          ]
+        },
+        {
+          "code": "LSC.COM",
+          "name": "Commercial & Medical Affairs",
+          "description": "Bringing product to market responsibly.",
+          "children": [
+            {
+              "code": "LSC.COM.MAC",
+              "name": "Market Access & Pricing",
+              "description": "HEOR, payer evidence, and pricing."
+            },
+            {
+              "code": "LSC.COM.FLD",
+              "name": "HCP Engagement & Compliance",
+              "description": "Field engagement, samples, and transparency reporting."
+            },
+            {
+              "code": "LSC.COM.MED",
+              "name": "Medical Affairs",
+              "description": "Medical information and scientific communication."
+            }
+          ]
+        },
+        {
+          "code": "LSC.COR",
+          "name": "Corporate Functions",
+          "description": "Shared enterprise functions — see Cross-Industry Core for detail.",
+          "children": [
+            {
+              "code": "LSC.COR.FIN",
+              "name": "Finance",
+              "description": "Accounting, planning, treasury, and tax."
+            },
+            {
+              "code": "LSC.COR.HR",
+              "name": "Human Resources",
+              "description": "Workforce administration and talent."
+            },
+            {
+              "code": "LSC.COR.IT",
+              "name": "Information Technology",
+              "description": "Applications, infrastructure, security, and data."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "industry": "Higher Education",
+      "name": "Higher Education Starter",
+      "revision": 1,
+      "description": "University and college capability starting point. Pair with the Cross-Industry Core for corporate functions detail.",
+      "attribution": "Hand-authored from public industry-standard capability vocabulary",
+      "tree": [
+        {
+          "code": "EDU.STU",
+          "name": "Student Lifecycle",
+          "description": "From prospect to graduate.",
+          "children": [
+            {
+              "code": "EDU.STU.ADM",
+              "name": "Recruitment & Admissions",
+              "description": "Prospect engagement, applications, and offers."
+            },
+            {
+              "code": "EDU.STU.ENR",
+              "name": "Enrollment & Student Records",
+              "description": "Registration, records, and progression."
+            },
+            {
+              "code": "EDU.STU.AID",
+              "name": "Financial Aid & Scholarships",
+              "description": "Aid assessment, awards, and disbursement."
+            },
+            {
+              "code": "EDU.STU.SUP",
+              "name": "Student Support & Wellbeing",
+              "description": "Advising, accessibility, and wellbeing services."
+            }
+          ]
+        },
+        {
+          "code": "EDU.TCH",
+          "name": "Curriculum & Teaching",
+          "description": "Designing and delivering learning.",
+          "children": [
+            {
+              "code": "EDU.TCH.CUR",
+              "name": "Curriculum & Program Management",
+              "description": "Program/course design and approval."
+            },
+            {
+              "code": "EDU.TCH.DEL",
+              "name": "Timetabling & Learning Delivery",
+              "description": "Scheduling and digital learning environments."
+            },
+            {
+              "code": "EDU.TCH.ASM",
+              "name": "Assessment & Grading",
+              "description": "Exams, assignments, and results."
+            },
+            {
+              "code": "EDU.TCH.ACR",
+              "name": "Accreditation & Academic Quality",
+              "description": "Quality assurance and accreditation compliance."
+            }
+          ]
+        },
+        {
+          "code": "EDU.RES",
+          "name": "Research Management",
+          "description": "Supporting the research mission.",
+          "children": [
+            {
+              "code": "EDU.RES.GRT",
+              "name": "Grants & Research Funding",
+              "description": "Proposals, awards, and post-award management."
+            },
+            {
+              "code": "EDU.RES.ETH",
+              "name": "Research Ethics & Compliance",
+              "description": "Ethics approvals and research integrity."
+            },
+            {
+              "code": "EDU.RES.OUT",
+              "name": "Research Outputs & Repositories",
+              "description": "Publications, data, and impact reporting."
+            }
+          ]
+        },
+        {
+          "code": "EDU.ADV",
+          "name": "Advancement & Engagement",
+          "description": "Community and philanthropic support.",
+          "children": [
+            {
+              "code": "EDU.ADV.FND",
+              "name": "Fundraising & Donor Management",
+              "description": "Campaigns, gifts, and stewardship."
+            },
+            {
+              "code": "EDU.ADV.ALM",
+              "name": "Alumni Relations",
+              "description": "Alumni engagement and networks."
+            }
+          ]
+        },
+        {
+          "code": "EDU.CMP",
+          "name": "Campus Operations",
+          "description": "Running the physical campus.",
+          "children": [
+            {
+              "code": "EDU.CMP.FAC",
+              "name": "Facilities & Space Management",
+              "description": "Buildings, maintenance, and space allocation."
+            },
+            {
+              "code": "EDU.CMP.HOU",
+              "name": "Student Housing",
+              "description": "Residence allocation and operations."
+            },
+            {
+              "code": "EDU.CMP.LIB",
+              "name": "Library Services",
+              "description": "Collections, access, and study spaces."
+            },
+            {
+              "code": "EDU.CMP.SAF",
+              "name": "Campus Safety & Security",
+              "description": "Security operations and emergency preparedness."
+            }
+          ]
+        },
+        {
+          "code": "EDU.COR",
+          "name": "Corporate Functions",
+          "description": "Shared enterprise functions — see Cross-Industry Core for detail.",
+          "children": [
+            {
+              "code": "EDU.COR.FIN",
+              "name": "Finance",
+              "description": "Accounting, planning, treasury, and tax."
+            },
+            {
+              "code": "EDU.COR.HR",
+              "name": "Human Resources",
+              "description": "Workforce administration and talent."
+            },
+            {
+              "code": "EDU.COR.IT",
+              "name": "Information Technology",
+              "description": "Applications, infrastructure, security, and data."
+            }
+          ]
+        }
+      ]
     }
   ]
 }
