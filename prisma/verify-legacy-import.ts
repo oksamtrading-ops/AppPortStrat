@@ -60,8 +60,9 @@ async function main() {
   const { buildEngagementWorkbook } = await import("../src/lib/xlsx-export");
   const workbook = await buildEngagementWorkbook(db, engagement.name);
   const xlsxBuffer = await workbook.xlsx.writeBuffer();
-  writeFileSync("/tmp/p5-export.xlsx", Buffer.from(xlsxBuffer as unknown as ArrayBuffer));
-  console.log("XLSX bytes:", (xlsxBuffer as ArrayBuffer).byteLength ?? (xlsxBuffer as Buffer).length);
+  const xlsxBytes = new Uint8Array(xlsxBuffer as unknown as ArrayBuffer);
+  writeFileSync("/tmp/p5-export.xlsx", xlsxBytes);
+  console.log("XLSX bytes:", xlsxBytes.byteLength);
 
   const { buildEngagementDeck } = await import("../src/lib/pptx-export");
   const deck = await buildEngagementDeck(db, { name: engagement.name, clientName: "Verify Co.", currency: "USD" });
