@@ -39,7 +39,7 @@ export default async function AdminLibrariesPage() {
           <CardHeader>
             <CardTitle className="text-base">Create a pack</CardTitle>
             <CardDescription>
-              Paste a three-column L0/L1/L2 table (or a LeanIX-style export with Level or Name+Parent columns).
+              Paste a three-column L0/L1/L2 table (or an EA-tool export with Level or Name+Parent columns).
               Re-using an existing industry + name creates the next version. Only paste content you have the right
               to redistribute — never a vendor&apos;s licensed catalog.
             </CardDescription>

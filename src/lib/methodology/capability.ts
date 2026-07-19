@@ -51,7 +51,7 @@ export function parseCapabilityPaste(text: string): ParsedCapabilityTree {
   return { tree, rowCount, skippedLines };
 }
 
-// ───────────────────── LeanIX-export-aware import ─────────────────────
+// ──────────────────── EA-tool-export-aware import ─────────────────────
 
 /** Quote-aware single-line CSV split for a given delimiter. */
 function splitDelimited(line: string, delim: string): string[] {
@@ -80,7 +80,7 @@ function detectDelimiter(line: string): string {
 
 /**
  * Import parser that also understands capability exports in the two shapes
- * EA tools (e.g. SAP LeanIX) produce, in CSV (comma/semicolon) or TSV:
+ * enterprise architecture tools produce, in CSV (comma/semicolon) or TSV:
  *   1. Level columns: a header row with "Level 1", "Level 2", "Level 3".
  *   2. Name + Parent: a header with "Name" (or "Display Name") and "Parent".
  * Anything else falls through to the classic headerless 3-column Excel paste.

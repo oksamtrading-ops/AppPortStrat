@@ -192,7 +192,7 @@ async function EmptyStateWithLibraries({
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
-        No capability model yet — start from an industry pack, paste from Excel or a LeanIX export, or add an L0
+        No capability model yet — start from an industry pack, paste from Excel or an EA-tool export, or add an L0
         capability manually.
       </p>
       {libraries.length > 0 ? (

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { parseCapabilityImport } from "../capability";
 
-describe("parseCapabilityImport (LeanIX-style exports)", () => {
+describe("parseCapabilityImport (EA-tool exports)", () => {
   it("parses a Level 1/2/3 column CSV with quoted fields", () => {
     const csv = [
       "Level 1,Level 2,Level 3",
