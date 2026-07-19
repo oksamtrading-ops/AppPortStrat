@@ -34,18 +34,18 @@ export function TopBar({
             <span className="text-muted-foreground truncate text-sm">{subtitle}</span>
           </>
         ) : null}
-        {roleLabel ? (
-          <Badge variant="outline" className="shrink-0">
-            {roleLabel}
-          </Badge>
-        ) : null}
+      </div>
+      <div className="flex items-center gap-3">
         {readOnlyLabel ? (
           <Badge variant="secondary" className="shrink-0">
             {readOnlyLabel}
           </Badge>
         ) : null}
-      </div>
-      <div className="flex items-center gap-3">
+        {roleLabel ? (
+          <Badge variant="outline" className="shrink-0">
+            {roleLabel}
+          </Badge>
+        ) : null}
         {session.mode === "clerk" ? (
           <UserButton />
         ) : (
