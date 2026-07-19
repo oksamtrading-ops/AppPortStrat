@@ -9,6 +9,8 @@ export interface MatrixApp {
   bv: number;
   it: number;
   disposition: Disposition;
+  /** Optional click-through target (spec §4.10: click → the application). */
+  href?: string;
 }
 
 const DOT: Record<Disposition, string> = {
@@ -55,17 +57,20 @@ export function MatrixView({
           <div className="border-brand/70 absolute inset-y-0 border-l border-dashed" style={{ left: xPct(optBv) }} />
           <div className="border-brand/70 absolute inset-x-0 border-t border-dashed" style={{ top: yPct(optIt) }} />
 
-          {plotted.map((a) => (
-            <span
-              key={a.id}
-              title={`${a.name} — BV ${formatScore(a.bv)}, IT ${formatScore(a.it)} → ${DISPOSITION_LABELS[a.disposition]}`}
-              className={cn(
-                "absolute z-10 block h-3 w-3 -translate-x-1/2 -translate-y-1/2 cursor-default rounded-full ring-2 ring-white",
-                DOT[a.disposition],
-              )}
-              style={{ left: xPct(a.bv), top: yPct(a.it) }}
-            />
-          ))}
+          {plotted.map((a) => {
+            const title = `${a.name} — BV ${formatScore(a.bv)}, IT ${formatScore(a.it)} → ${DISPOSITION_LABELS[a.disposition]}`;
+            const className = cn(
+              "absolute z-10 block h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-white",
+              a.href ? "hover:scale-125" : "cursor-default",
+              DOT[a.disposition],
+            );
+            const style = { left: xPct(a.bv), top: yPct(a.it) };
+            return a.href ? (
+              <a key={a.id} href={a.href} title={title} className={className} style={style} />
+            ) : (
+              <span key={a.id} title={title} className={className} style={style} />
+            );
+          })}
 
           {/* Axis labels */}
           <span className="text-muted-foreground absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full text-xs">

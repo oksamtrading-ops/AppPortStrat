@@ -29,6 +29,8 @@ interface GridFilters {
   disposition?: string;
   scope?: string;
   view?: string;
+  /** Capability drill-through (heat-map cell click): node id, subtree included. */
+  cap?: string;
 }
 
 const DISPOSITION_COLOR: Record<Disposition, PillColor> = {
@@ -75,8 +77,30 @@ export default async function ApplicationsPage({
   const urgIt = thresholds?.urgIt ?? THRESHOLD_DEFAULTS.urgIt;
   const optIt = thresholds?.optIt ?? THRESHOLD_DEFAULTS.optIt;
 
+  // Capability drill-through: the node and its whole subtree.
+  let capFilter: { name: string; ids: Set<string> } | null = null;
+  if (filters.cap) {
+    const nodes = await db.capabilityNode.findMany({ select: { id: true, parentId: true, name: true } });
+    const root = nodes.find((n) => n.id === filters.cap);
+    if (root) {
+      const ids = new Set([root.id]);
+      let grew = true;
+      while (grew) {
+        grew = false;
+        for (const n of nodes) {
+          if (n.parentId && ids.has(n.parentId) && !ids.has(n.id)) {
+            ids.add(n.id);
+            grew = true;
+          }
+        }
+      }
+      capFilter = { name: root.name, ids };
+    }
+  }
+
   const q = (filters.q ?? "").trim().toLowerCase();
   const applications = all.filter((app) => {
+    if (capFilter && (!app.capabilityNodeId || !capFilter.ids.has(app.capabilityNodeId))) return false;
     if (q && !`${app.name} ${app.acronym ?? ""}`.toLowerCase().includes(q)) return false;
     if (filters.disposition) {
       const computed = (app.result?.computedDisposition ?? "UNKNOWN") as Disposition;
@@ -186,6 +210,14 @@ export default async function ApplicationsPage({
         <Button type="submit" size="sm" variant="outline" className="h-9">
           Apply
         </Button>
+        {capFilter ? (
+          <span className="flex items-center gap-1">
+            <Pill color="brand">Capability: {capFilter.name}</Pill>
+            <Link href={`/e/${engagementId}/applications`} className="text-muted-foreground text-xs hover:underline">
+              clear
+            </Link>
+          </span>
+        ) : null}
       </form>
 
       {view === "matrix" ? (
