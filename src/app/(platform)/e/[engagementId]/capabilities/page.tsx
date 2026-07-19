@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { CapabilityBoard, type L0SectionData, type L1CardData } from "@/components/capabilities/board";
 import { ImportCapabilitiesDialog } from "@/components/capabilities/import-dialog";
 import { HeatGrid } from "@/components/capabilities/heat-grid";
-import { addCapabilityNode } from "./actions";
+import { addCapabilityNode, importLibraryAction, promoteLibraryAction } from "./actions";
+import { listLatestCapabilityLibraries } from "@/lib/db/library";
+import { Label } from "@/components/ui/label";
 
 export const dynamic = "force-dynamic";
 
@@ -136,7 +138,7 @@ export default async function CapabilitiesPage({
       </div>
 
       {nodeCount === 0 ? (
-        <p className="text-muted-foreground text-sm">No capability model yet — import one or add an L0 capability.</p>
+        <EmptyStateWithLibraries engagementId={engagementId} canImportLibrary={ctx.role === "ENGAGEMENT_LEAD" && !ctx.readOnly} />
       ) : activeView === "heatmap" ? (
         <HeatGrid
           engagementId={engagementId}
@@ -148,6 +150,74 @@ export default async function CapabilitiesPage({
       ) : (
         <CapabilityBoard engagementId={engagementId} sections={sections} canEdit={canEdit} canDelete={canDelete} />
       )}
+
+      {nodeCount > 0 && ctx.role === "ENGAGEMENT_LEAD" && !ctx.readOnly ? (
+        <details className="rounded-xl border bg-card p-4">
+          <summary className="cursor-pointer text-sm font-medium">Promote this capability model to the reference library</summary>
+          <form action={promoteLibraryAction} className="mt-3 grid max-w-2xl grid-cols-1 gap-3 md:grid-cols-2">
+            <input type="hidden" name="engagementId" value={engagementId} />
+            <div className="space-y-1">
+              <Label htmlFor="promote-industry">Industry</Label>
+              <Input id="promote-industry" name="industry" required placeholder="Banking" />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="promote-name">Pack name</Label>
+              <Input id="promote-name" name="packName" required placeholder="Retail Banking (refined)" />
+            </div>
+            <label className="text-muted-foreground flex items-start gap-2 text-xs md:col-span-2">
+              <input type="checkbox" name="confidentialityConfirmed" required className="mt-0.5" />
+              I confirm the capability names and descriptions contain no client-confidential content. Only the
+              structure is copied (never applications or scores), and the pack becomes visible to all engagements.
+            </label>
+            <div className="md:col-span-2">
+              <Button type="submit" variant="outline">
+                Promote as new pack version
+              </Button>
+            </div>
+          </form>
+        </details>
+      ) : null}
+    </div>
+  );
+}
+
+async function EmptyStateWithLibraries({
+  engagementId,
+  canImportLibrary,
+}: {
+  engagementId: string;
+  canImportLibrary: boolean;
+}) {
+  const libraries = canImportLibrary ? await listLatestCapabilityLibraries() : [];
+  return (
+    <div className="space-y-4">
+      <p className="text-muted-foreground text-sm">
+        No capability model yet — start from an industry pack, paste from Excel or a LeanIX export, or add an L0
+        capability manually.
+      </p>
+      {libraries.length > 0 ? (
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {libraries.map((l) => (
+            <div key={l.id} className="flex flex-col rounded-xl border bg-card p-4">
+              <div className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{l.industry}</div>
+              <div className="font-medium">{l.name}</div>
+              <p className="text-muted-foreground mt-1 flex-1 text-xs">{l.description}</p>
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-muted-foreground text-xs">
+                  v{l.version} · {l.nodeCount} capabilities
+                </span>
+                <form action={importLibraryAction}>
+                  <input type="hidden" name="engagementId" value={engagementId} />
+                  <input type="hidden" name="libraryId" value={l.id} />
+                  <Button type="submit" size="sm">
+                    Use this pack
+                  </Button>
+                </form>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requirePlatformAdmin } from "@/lib/auth/context";
 import { adminDb } from "@/lib/db/admin";
 import { TopBar } from "@/components/shell/top-bar";
@@ -31,6 +32,8 @@ export default async function AdminEngagementsPage() {
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { applications: true, memberships: true } } },
   });
+  const { listLatestCapabilityLibraries } = await import("@/lib/db/library");
+  const libraries = await listLatestCapabilityLibraries();
   // Server component: the request time decides purge eligibility.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
@@ -93,6 +96,26 @@ export default async function AdminEngagementsPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="capabilityLibraryId">Capability model</Label>
+                <select
+                  id="capabilityLibraryId"
+                  name="capabilityLibraryId"
+                  defaultValue=""
+                  className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                >
+                  <option value="">Start empty</option>
+                  {libraries.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.industry} — {l.name} (v{l.version}, {l.nodeCount} capabilities)
+                    </option>
+                  ))}
+                </select>
+                <p className="text-muted-foreground text-xs">
+                  Industry starter pack the client refines during workshops. Ignored when cloning — the clone brings
+                  its own tree. Curate packs on the <Link href="/admin/libraries" className="underline">library page</Link>.
+                </p>
               </div>
               <div className="md:col-span-2">
                 <Button type="submit">Create engagement</Button>

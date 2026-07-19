@@ -332,7 +332,13 @@ model CapabilityNode {
   parentId      String?
   level         CapabilityLevel
   name          String
+  description   String? // one-line definition shown during client refinement
   isPlaceholder Boolean         @default(false) // "Unassigned" (the VBA "Level L0"/"Level L1" replacement)
+  // Reference-library provenance (null = authored in this engagement). Kept
+  // through renames so refreshed packs and cross-engagement comparisons can
+  // still line nodes up by stable code.
+  sourceLibraryId String?
+  sourceCode      String?
 
   engagement Engagement       @relation(fields: [engagementId], references: [id], onDelete: Cascade)
   parent     CapabilityNode?  @relation("CapabilityTree", fields: [parentId, engagementId], references: [id, engagementId], onDelete: Cascade)
@@ -550,4 +556,44 @@ model RateLimitHit {
   windowEnd DateTime
 
   @@index([windowEnd])
+}
+
+// ────────────────── Capability reference library (platform-level) ──────────────────
+// Industry starting-point capability maps, cloned into engagements the same
+// way the question bank is (immutable snapshot + provenance stamps). NOT
+// tenant-scoped: curated by Platform Admins and by Engagement Leads promoting
+// a refined tree. Never contains client data unless a Lead explicitly
+// promotes it.
+
+model CapabilityLibrary {
+  id          String   @id @default(cuid())
+  industry    String // flat list: "Cross-Industry", "Banking", "Insurance", …
+  name        String
+  description String?
+  attribution String? // content source note (e.g. "Hand-authored", "Promoted from engagement")
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  createdBy   String? // display name of the promoter/curator
+
+  nodes CapabilityLibraryNode[]
+
+  @@unique([industry, name, version])
+}
+
+model CapabilityLibraryNode {
+  id          String          @id @default(cuid())
+  libraryId   String
+  parentId    String?
+  level       CapabilityLevel
+  code        String // stable within the library — stamped onto cloned CapabilityNodes
+  name        String
+  description String?
+  orderIndex  Int             @default(0)
+
+  library  CapabilityLibrary       @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  parent   CapabilityLibraryNode?  @relation("LibraryTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children CapabilityLibraryNode[] @relation("LibraryTree")
+
+  @@unique([libraryId, code])
+  @@index([libraryId])
 }

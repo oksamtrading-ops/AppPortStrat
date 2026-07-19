@@ -1,0 +1,240 @@
+{
+  "packs": [
+    {
+      "industry": "Cross-Industry",
+      "name": "Cross-Industry Core",
+      "description": "Generic business capability starting point covering the functions every organization runs. Use as-is for diversified organizations or alongside an industry pack.",
+      "attribution": "Hand-authored from public industry-standard capability vocabulary",
+      "tree": [
+        { "code": "EM", "name": "Enterprise Management", "description": "Direction-setting and oversight of the organization.", "children": [
+          { "code": "EM.SP", "name": "Strategy & Planning", "description": "Corporate strategy definition, business planning, and target setting.", "children": [
+            { "code": "EM.SP.PM", "name": "Enterprise Performance Management", "description": "KPIs, scorecards, and tracking against strategic goals." },
+            { "code": "EM.SP.PPM", "name": "Portfolio & Project Management", "description": "Investment portfolio, program, and project delivery." }
+          ] },
+          { "code": "EM.GRC", "name": "Governance, Risk & Compliance", "description": "Policies, controls, risk oversight, and regulatory compliance.", "children": [
+            { "code": "EM.GRC.RSK", "name": "Risk Management", "description": "Identification, assessment, and mitigation of enterprise risks." },
+            { "code": "EM.GRC.REG", "name": "Regulatory Compliance", "description": "Monitoring and meeting regulatory obligations." },
+            { "code": "EM.GRC.AUD", "name": "Internal Audit & Controls", "description": "Audit planning, execution, and controls management." }
+          ] },
+          { "code": "EM.LEG", "name": "Legal Management", "description": "Contract lifecycle, legal matters, and intellectual property." },
+          { "code": "EM.COM", "name": "Corporate Communications", "description": "Internal and external communications and public relations." }
+        ] },
+        { "code": "FIN", "name": "Finance", "description": "Managing the organization's money and financial truth.", "children": [
+          { "code": "FIN.ACC", "name": "Accounting & Financial Close", "description": "Bookkeeping through consolidated close.", "children": [
+            { "code": "FIN.ACC.GL", "name": "General Ledger Accounting", "description": "Chart of accounts, journals, and period-end close." },
+            { "code": "FIN.ACC.AP", "name": "Accounts Payable", "description": "Supplier invoice processing and payment runs." },
+            { "code": "FIN.ACC.AR", "name": "Accounts Receivable", "description": "Customer invoicing, collections, and cash application." },
+            { "code": "FIN.ACC.FA", "name": "Fixed Asset Accounting", "description": "Capitalization, depreciation, and asset registers." }
+          ] },
+          { "code": "FIN.FPA", "name": "Financial Planning & Analysis", "description": "Budgeting, forecasting, and margin analysis." },
+          { "code": "FIN.TRE", "name": "Treasury & Cash Management", "description": "Liquidity, funding, hedging, and bank relationships." },
+          { "code": "FIN.TAX", "name": "Tax Management", "description": "Tax determination, filing, and compliance." }
+        ] },
+        { "code": "HR", "name": "Human Resources", "description": "Attracting, developing, and administering the workforce.", "children": [
+          { "code": "HR.ADM", "name": "HR Administration", "description": "Employee records, organizational structure, and HR compliance." },
+          { "code": "HR.PAY", "name": "Payroll & Benefits", "description": "Pay calculation, benefits, and reimbursements." },
+          { "code": "HR.TA", "name": "Talent Acquisition", "description": "Sourcing, recruiting, and onboarding." },
+          { "code": "HR.TL", "name": "Talent & Learning", "description": "Performance, career development, succession, and training." },
+          { "code": "HR.WFM", "name": "Workforce Planning & Time", "description": "Headcount planning, scheduling, time and absence." }
+        ] },
+        { "code": "CR", "name": "Customer & Revenue", "description": "Winning, serving, and growing customers.", "children": [
+          { "code": "CR.MKT", "name": "Marketing", "description": "Brand, campaigns, and demand generation.", "children": [
+            { "code": "CR.MKT.CMP", "name": "Campaign Management", "description": "Planning, executing, and measuring marketing campaigns." },
+            { "code": "CR.MKT.CDI", "name": "Customer Data & Insights", "description": "Customer master data, segmentation, and analytics." }
+          ] },
+          { "code": "CR.SAL", "name": "Sales", "description": "Pipeline through order.", "children": [
+            { "code": "CR.SAL.OPP", "name": "Opportunity & Pipeline Management", "description": "Leads, opportunities, and forecasting." },
+            { "code": "CR.SAL.ORD", "name": "Order & Contract Management", "description": "Quotes, sales orders, and customer contracts." },
+            { "code": "CR.SAL.PRC", "name": "Pricing & Quotation", "description": "Price setting, discounting, and quote generation." }
+          ] },
+          { "code": "CR.SVC", "name": "Customer Service", "description": "Inquiries, complaints, warranty, and self-service support." },
+          { "code": "CR.COM", "name": "Commerce Channels", "description": "Web, store, and omnichannel selling experiences." }
+        ] },
+        { "code": "OPS", "name": "Operations & Supply Chain", "description": "Making and moving the product or service.", "children": [
+          { "code": "OPS.SCP", "name": "Supply Chain Planning", "description": "Demand forecasting, supply planning, and S&OP." },
+          { "code": "OPS.PRC", "name": "Procurement", "description": "Sourcing, supplier management, and purchasing.", "children": [
+            { "code": "OPS.PRC.SRC", "name": "Sourcing & Contracts", "description": "RFx, supplier selection, and procurement contracts." },
+            { "code": "OPS.PRC.PUR", "name": "Operational Purchasing", "description": "Requisitions, purchase orders, and receiving." },
+            { "code": "OPS.PRC.SUP", "name": "Supplier Management", "description": "Supplier onboarding, performance, and risk." }
+          ] },
+          { "code": "OPS.LOG", "name": "Logistics & Warehousing", "description": "Transportation, warehousing, and inventory movements." },
+          { "code": "OPS.MFG", "name": "Production & Service Operations", "description": "Producing goods or delivering the core service, with quality management." },
+          { "code": "OPS.AST", "name": "Asset & Maintenance Management", "description": "Physical asset lifecycle, maintenance, and reliability." }
+        ] },
+        { "code": "PSD", "name": "Product & Service Development", "description": "Deciding and designing what to offer.", "children": [
+          { "code": "PSD.PPM", "name": "Product Portfolio Management", "description": "Portfolio strategy, roadmaps, and lifecycle decisions." },
+          { "code": "PSD.ENG", "name": "Product Design & Engineering", "description": "Requirements, design, and engineering change." },
+          { "code": "PSD.PLC", "name": "Product Compliance & Data", "description": "Product master data, specifications, and compliance." },
+          { "code": "PSD.INN", "name": "Innovation & Ideation", "description": "Idea capture, evaluation, and incubation." }
+        ] },
+        { "code": "IT", "name": "Information Technology", "description": "Running and evolving the technology estate.", "children": [
+          { "code": "IT.STR", "name": "IT Strategy & Architecture", "description": "IT strategy, enterprise architecture, and portfolio governance." },
+          { "code": "IT.APP", "name": "Application Development & Maintenance", "description": "Building, integrating, and maintaining applications." },
+          { "code": "IT.OPS", "name": "IT Operations & Infrastructure", "description": "Compute, network, end-user services, and service management." },
+          { "code": "IT.SEC", "name": "Cybersecurity & Data Protection", "description": "Security operations, identity and access, and data privacy." },
+          { "code": "IT.DATA", "name": "Data & Analytics", "description": "Data platforms, governance, reporting, and advanced analytics." }
+        ] }
+      ]
+    },
+    {
+      "industry": "Banking",
+      "name": "Banking Starter",
+      "description": "Retail and commercial banking capability starting point. Pair with the Cross-Industry Core for corporate functions detail.",
+      "attribution": "Hand-authored from public industry-standard capability vocabulary",
+      "tree": [
+        { "code": "BNK.CLI", "name": "Client & Distribution", "description": "Acquiring and serving banking clients across channels.", "children": [
+          { "code": "BNK.CLI.ONB", "name": "Client Onboarding & KYC", "description": "Identity verification, due diligence, and account opening." },
+          { "code": "BNK.CLI.CRM", "name": "Client Relationship Management", "description": "Client data, interactions, and advisory." },
+          { "code": "BNK.CLI.CHN", "name": "Channel Management", "description": "Branch, digital banking, mobile, and contact center channels." }
+        ] },
+        { "code": "BNK.LEN", "name": "Lending", "description": "Credit products from application to payoff.", "children": [
+          { "code": "BNK.LEN.ORI", "name": "Loan Origination", "description": "Application capture, documentation, and disbursement." },
+          { "code": "BNK.LEN.UWR", "name": "Underwriting & Credit Decisioning", "description": "Credit assessment, scoring, and approval." },
+          { "code": "BNK.LEN.SVC", "name": "Loan Servicing", "description": "Repayments, restructures, and lifecycle events." },
+          { "code": "BNK.LEN.COL", "name": "Collections & Recovery", "description": "Arrears management and workout." }
+        ] },
+        { "code": "BNK.DEP", "name": "Deposits & Accounts", "description": "Transaction and savings account products.", "children": [
+          { "code": "BNK.DEP.ACC", "name": "Account Management", "description": "Account lifecycle, statements, and mandates." },
+          { "code": "BNK.DEP.PRD", "name": "Product Configuration & Pricing", "description": "Deposit product terms, rates, and fees." }
+        ] },
+        { "code": "BNK.PAY", "name": "Payments", "description": "Moving money for clients.", "children": [
+          { "code": "BNK.PAY.INI", "name": "Payment Initiation & Processing", "description": "Domestic and cross-border payment execution." },
+          { "code": "BNK.PAY.CLR", "name": "Clearing & Settlement", "description": "Scheme connectivity, clearing, and reconciliation." },
+          { "code": "BNK.PAY.CRD", "name": "Card Management", "description": "Card issuance, authorization, and disputes." },
+          { "code": "BNK.PAY.FRD", "name": "Payment Fraud Monitoring", "description": "Real-time fraud detection and case handling." }
+        ] },
+        { "code": "BNK.TRM", "name": "Treasury & Markets", "description": "Bank funding and market-facing activities.", "children": [
+          { "code": "BNK.TRM.TRD", "name": "Trading & Execution", "description": "Market trading and client order execution." },
+          { "code": "BNK.TRM.ALM", "name": "Asset-Liability Management", "description": "Balance-sheet, liquidity, and interest-rate management." }
+        ] },
+        { "code": "BNK.RSK", "name": "Risk & Compliance", "description": "Managing financial and non-financial risk.", "children": [
+          { "code": "BNK.RSK.CRD", "name": "Credit Risk Management", "description": "Portfolio credit risk measurement and provisioning." },
+          { "code": "BNK.RSK.AML", "name": "AML & Financial Crime", "description": "Transaction monitoring, screening, and reporting." },
+          { "code": "BNK.RSK.REG", "name": "Regulatory Reporting", "description": "Prudential and statutory report production." },
+          { "code": "BNK.RSK.OPR", "name": "Operational Risk", "description": "Incident, control, and operational risk management." }
+        ] },
+        { "code": "BNK.COR", "name": "Corporate Functions", "description": "Shared enterprise functions — see Cross-Industry Core for detail.", "children": [
+          { "code": "BNK.COR.FIN", "name": "Finance", "description": "Accounting, planning, treasury, and tax." },
+          { "code": "BNK.COR.HR", "name": "Human Resources", "description": "Workforce administration and talent." },
+          { "code": "BNK.COR.IT", "name": "Information Technology", "description": "Applications, infrastructure, security, and data." }
+        ] }
+      ]
+    },
+    {
+      "industry": "Insurance",
+      "name": "Insurance Starter",
+      "description": "P&C and life insurance capability starting point. Pair with the Cross-Industry Core for corporate functions detail.",
+      "attribution": "Hand-authored from public industry-standard capability vocabulary",
+      "tree": [
+        { "code": "INS.UW", "name": "Product & Underwriting", "description": "Designing and pricing insurable products.", "children": [
+          { "code": "INS.UW.PRD", "name": "Product Development", "description": "Coverage design, rating rules, and filings." },
+          { "code": "INS.UW.RSK", "name": "Underwriting & Risk Assessment", "description": "Risk evaluation, pricing, and acceptance." },
+          { "code": "INS.UW.ISS", "name": "Policy Issuance", "description": "Quote-to-policy binding and document production." }
+        ] },
+        { "code": "INS.POL", "name": "Policy Administration", "description": "Servicing in-force policies.", "children": [
+          { "code": "INS.POL.SVC", "name": "Policy Servicing", "description": "Endorsements, cancellations, and reinstatements." },
+          { "code": "INS.POL.BIL", "name": "Billing & Collections", "description": "Premium billing, payment plans, and dunning." },
+          { "code": "INS.POL.REN", "name": "Renewals", "description": "Renewal processing and retention." }
+        ] },
+        { "code": "INS.CLM", "name": "Claims", "description": "From first notice of loss to settlement.", "children": [
+          { "code": "INS.CLM.FNL", "name": "First Notice of Loss", "description": "Claim intake across channels." },
+          { "code": "INS.CLM.ADJ", "name": "Claims Assessment & Adjudication", "description": "Coverage verification, evaluation, and decisions." },
+          { "code": "INS.CLM.PAY", "name": "Claims Payment", "description": "Settlement disbursement and vendor payments." },
+          { "code": "INS.CLM.FRD", "name": "Claims Fraud Detection", "description": "Fraud scoring and special investigations." },
+          { "code": "INS.CLM.SUB", "name": "Subrogation & Recovery", "description": "Recovering paid losses from third parties." }
+        ] },
+        { "code": "INS.DST", "name": "Distribution", "description": "Selling through intermediated and direct channels.", "children": [
+          { "code": "INS.DST.AGT", "name": "Agent & Broker Management", "description": "Producer onboarding, licensing, and support." },
+          { "code": "INS.DST.DIR", "name": "Direct Channels", "description": "Web, mobile, and call-center sales." },
+          { "code": "INS.DST.CMS", "name": "Commission Management", "description": "Producer compensation calculation and payment." }
+        ] },
+        { "code": "INS.ACT", "name": "Actuarial & Reinsurance", "description": "Quantifying and transferring insurance risk.", "children": [
+          { "code": "INS.ACT.RES", "name": "Reserving", "description": "Loss reserve estimation and monitoring." },
+          { "code": "INS.ACT.MOD", "name": "Actuarial Modeling & Pricing", "description": "Experience analysis and rate adequacy." },
+          { "code": "INS.ACT.REI", "name": "Reinsurance Management", "description": "Treaty and facultative program administration." }
+        ] },
+        { "code": "INS.RSK", "name": "Risk & Compliance", "description": "Enterprise risk, solvency, and market conduct compliance." },
+        { "code": "INS.COR", "name": "Corporate Functions", "description": "Shared enterprise functions — see Cross-Industry Core for detail.", "children": [
+          { "code": "INS.COR.FIN", "name": "Finance", "description": "Accounting, planning, treasury, and tax." },
+          { "code": "INS.COR.HR", "name": "Human Resources", "description": "Workforce administration and talent." },
+          { "code": "INS.COR.IT", "name": "Information Technology", "description": "Applications, infrastructure, security, and data." }
+        ] }
+      ]
+    },
+    {
+      "industry": "Retail",
+      "name": "Retail Starter",
+      "description": "Store and digital retail capability starting point. Pair with the Cross-Industry Core for corporate functions detail.",
+      "attribution": "Hand-authored from public industry-standard capability vocabulary",
+      "tree": [
+        { "code": "RET.MER", "name": "Merchandising", "description": "Deciding what to sell, where, and at what price.", "children": [
+          { "code": "RET.MER.AST", "name": "Assortment & Category Management", "description": "Range planning and category strategy." },
+          { "code": "RET.MER.PRC", "name": "Pricing & Promotions", "description": "Price setting, markdowns, and promotional events." },
+          { "code": "RET.MER.SPC", "name": "Space & Planogram Management", "description": "Shelf space allocation and store layouts." }
+        ] },
+        { "code": "RET.BUY", "name": "Buying & Supplier Management", "description": "Sourcing merchandise and managing vendor relationships." },
+        { "code": "RET.SCM", "name": "Supply Chain", "description": "Getting product to stores and customers.", "children": [
+          { "code": "RET.SCM.DEM", "name": "Demand Forecasting & Replenishment", "description": "Forecasting and automated replenishment." },
+          { "code": "RET.SCM.DCF", "name": "Distribution & Fulfillment", "description": "DC operations and omnichannel order fulfillment." },
+          { "code": "RET.SCM.INV", "name": "Inventory Management", "description": "Stock visibility, counts, and shrink control." }
+        ] },
+        { "code": "RET.STO", "name": "Store Operations", "description": "Running physical stores.", "children": [
+          { "code": "RET.STO.POS", "name": "Point of Sale & Checkout", "description": "Transactions, tenders, and receipts." },
+          { "code": "RET.STO.WFM", "name": "Store Workforce Management", "description": "Scheduling, tasks, and store communications." },
+          { "code": "RET.STO.LPR", "name": "Loss Prevention", "description": "Shrink analytics and incident management." }
+        ] },
+        { "code": "RET.DIG", "name": "Digital Commerce", "description": "Selling online and through marketplaces.", "children": [
+          { "code": "RET.DIG.ECM", "name": "E-commerce Storefront", "description": "Web and app shopping experience." },
+          { "code": "RET.DIG.ORD", "name": "Order Management & Orchestration", "description": "Distributed order routing across channels." },
+          { "code": "RET.DIG.MKT", "name": "Marketplace & Partner Selling", "description": "Third-party marketplace operations." }
+        ] },
+        { "code": "RET.CUS", "name": "Customer & Marketing", "description": "Knowing and keeping customers.", "children": [
+          { "code": "RET.CUS.LOY", "name": "Loyalty Management", "description": "Programs, points, and member benefits." },
+          { "code": "RET.CUS.CRM", "name": "Customer Data & CRM", "description": "Customer profiles, consent, and segmentation." },
+          { "code": "RET.CUS.CMP", "name": "Marketing & Campaigns", "description": "Omnichannel campaign planning and execution." }
+        ] },
+        { "code": "RET.COR", "name": "Corporate Functions", "description": "Shared enterprise functions — see Cross-Industry Core for detail.", "children": [
+          { "code": "RET.COR.FIN", "name": "Finance", "description": "Accounting, planning, treasury, and tax." },
+          { "code": "RET.COR.HR", "name": "Human Resources", "description": "Workforce administration and talent." },
+          { "code": "RET.COR.IT", "name": "Information Technology", "description": "Applications, infrastructure, security, and data." }
+        ] }
+      ]
+    },
+    {
+      "industry": "Manufacturing",
+      "name": "Manufacturing Starter",
+      "description": "Discrete and process manufacturing capability starting point. Pair with the Cross-Industry Core for corporate functions detail.",
+      "attribution": "Hand-authored from public industry-standard capability vocabulary",
+      "tree": [
+        { "code": "MFG.RND", "name": "Product Development", "description": "Engineering the product.", "children": [
+          { "code": "MFG.RND.DES", "name": "Design & Engineering", "description": "CAD/CAE design and engineering change management." },
+          { "code": "MFG.RND.PLM", "name": "Product Lifecycle & BOM Management", "description": "Product data, BOMs, and versioning." },
+          { "code": "MFG.RND.CMP", "name": "Product Compliance", "description": "Regulatory, safety, and material compliance." }
+        ] },
+        { "code": "MFG.PRD", "name": "Production", "description": "Making the product.", "children": [
+          { "code": "MFG.PRD.PLN", "name": "Production Planning & Scheduling", "description": "MRP, capacity, and shop-floor scheduling." },
+          { "code": "MFG.PRD.EXE", "name": "Manufacturing Execution", "description": "Work orders, data collection, and traceability." },
+          { "code": "MFG.PRD.QUA", "name": "Quality Management", "description": "Inspection, non-conformance, and improvement." },
+          { "code": "MFG.PRD.MNT", "name": "Plant & Equipment Maintenance", "description": "Preventive and corrective maintenance of assets." }
+        ] },
+        { "code": "MFG.SCM", "name": "Supply Chain", "description": "Feeding production and delivering product.", "children": [
+          { "code": "MFG.SCM.DEM", "name": "Demand & Supply Planning", "description": "Forecasting, S&OP, and supply balancing." },
+          { "code": "MFG.SCM.PRC", "name": "Procurement", "description": "Direct and indirect sourcing and purchasing." },
+          { "code": "MFG.SCM.LOG", "name": "Logistics & Warehousing", "description": "Inbound/outbound transport and warehouse operations." },
+          { "code": "MFG.SCM.INV", "name": "Inventory Management", "description": "Raw material, WIP, and finished goods control." }
+        ] },
+        { "code": "MFG.SLS", "name": "Sales & Aftermarket", "description": "Selling and supporting the installed base.", "children": [
+          { "code": "MFG.SLS.ORD", "name": "Order Management", "description": "Quotes, configuration, and sales orders." },
+          { "code": "MFG.SLS.SRV", "name": "Aftermarket Service", "description": "Field service, spare parts, and service contracts." },
+          { "code": "MFG.SLS.WAR", "name": "Warranty Management", "description": "Warranty registration, claims, and recovery." }
+        ] },
+        { "code": "MFG.EHS", "name": "EHS & Sustainability", "description": "Environment, health, safety, and emissions management." },
+        { "code": "MFG.COR", "name": "Corporate Functions", "description": "Shared enterprise functions — see Cross-Industry Core for detail.", "children": [
+          { "code": "MFG.COR.FIN", "name": "Finance", "description": "Accounting, planning, treasury, and tax." },
+          { "code": "MFG.COR.HR", "name": "Human Resources", "description": "Workforce administration and talent." },
+          { "code": "MFG.COR.IT", "name": "Information Technology", "description": "Applications, infrastructure, security, and data." }
+        ] }
+      ]
+    }
+  ]
+}

@@ -5,6 +5,7 @@
  * never data (applications, responses, answers, costs).
  */
 import { getRawPrisma } from "./prisma";
+import { cloneLibraryNodesInTx } from "./library";
 import {
   APS50_PRESET,
   DEFAULT_IMPORTANCE_RATING,
@@ -23,6 +24,11 @@ export interface CreateEngagementParams {
   fiscalYearConvention?: string;
   clerkOrgId?: string | null;
   source: EngagementSeedSource;
+  /**
+   * Optional industry starter pack for the capability model. Ignored when
+   * cloning from a prior engagement (the clone's tree wins).
+   */
+  capabilityLibraryId?: string | null;
 }
 
 export async function createEngagementWithConfig(params: CreateEngagementParams) {
@@ -195,6 +201,12 @@ export async function createEngagementWithConfig(params: CreateEngagementParams)
           nodeIdMap.set(node.id, created.id);
         }
       }
+    }
+
+    // 3. Capability model from an industry starter pack (not when cloning —
+    //    the clone already brought its own tree).
+    if (params.capabilityLibraryId && params.source.kind !== "clone") {
+      await cloneLibraryNodesInTx(tx, engagement.id, params.capabilityLibraryId);
     }
 
     return engagement;

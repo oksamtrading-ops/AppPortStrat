@@ -22,11 +22,12 @@ export function ImportCapabilitiesDialog({ engagementId }: { engagementId: strin
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Import capabilities from Excel</DialogTitle>
+          <DialogTitle>Import capabilities</DialogTitle>
           <DialogDescription>
-            Paste the denormalized three-column table (L0, L1, L2 — tab-separated, straight from Excel). Blank
-            L0/L1 cells become explicit “Unassigned” placeholders. Merging is additive and deduplicated;
-            nothing is deleted.
+            Paste a three-column table (L0, L1, L2 — straight from Excel), or a capability export from an EA tool
+            such as SAP LeanIX (CSV/TSV with “Level 1/2/3” columns, or “Name” + “Parent” columns — levels deeper
+            than three are skipped). Blank L0/L1 cells become explicit “Unassigned” placeholders. Merging is
+            additive and deduplicated; nothing is deleted.
           </DialogDescription>
         </DialogHeader>
         <form action={pasteCapabilities} onSubmit={() => setOpen(false)} className="space-y-2">

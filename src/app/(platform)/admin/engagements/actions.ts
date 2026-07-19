@@ -16,6 +16,7 @@ const createSchema = z.object({
   fiscalYearConvention: z.string().trim().min(1).max(20).default("FY"),
   source: z.enum(["defaults", "aps50", "clone"]),
   sourceEngagementId: z.string().optional(),
+  capabilityLibraryId: z.string().optional(),
 });
 
 export async function createEngagementAction(formData: FormData) {
@@ -27,6 +28,7 @@ export async function createEngagementAction(formData: FormData) {
     fiscalYearConvention: formData.get("fiscalYearConvention") || "FY",
     source: formData.get("source"),
     sourceEngagementId: formData.get("sourceEngagementId") || undefined,
+    capabilityLibraryId: formData.get("capabilityLibraryId") || undefined,
   });
 
   // In Clerk mode the engagement is bound to a new Clerk organization;
@@ -54,6 +56,7 @@ export async function createEngagementAction(formData: FormData) {
         parsed.source === "clone"
           ? { kind: "clone", sourceEngagementId: z.string().min(1).parse(parsed.sourceEngagementId) }
           : { kind: "defaults", preset: parsed.source === "aps50" ? "APS50" : "NEUTRAL" },
+      capabilityLibraryId: parsed.capabilityLibraryId ?? null,
     });
   } catch (err) {
     if (clerkOrgId) {

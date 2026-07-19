@@ -206,6 +206,26 @@ async function main() {
     console.log(`Seeded ${t.type}: ${t.questions.length} questions`);
   }
 
+  // Capability reference library — hand-authored industry starter packs.
+  // Idempotent by (industry, name): existing packs are never touched (content
+  // revisions ship as new versions via the admin/promote flows, not the seed).
+  const { createCapabilityLibrary } = await import("../src/lib/db/library");
+  const libraryData: { packs: import("../src/lib/db/library").CreateLibraryInput[] } = JSON.parse(
+    readFileSync(join(__dirname, "seed-data", "capability-libraries.json"), "utf8"),
+  );
+  for (const pack of libraryData.packs) {
+    const existing = await prisma.capabilityLibrary.findFirst({
+      where: { industry: pack.industry, name: pack.name },
+      select: { id: true, version: true },
+    });
+    if (existing) {
+      console.log(`Library pack exists, skipping: ${pack.industry} / ${pack.name} (v${existing.version})`);
+      continue;
+    }
+    const created = await createCapabilityLibrary(pack);
+    console.log(`Seeded library pack: ${pack.industry} / ${pack.name} (v${created.version})`);
+  }
+
   await prisma.$disconnect();
 }
 

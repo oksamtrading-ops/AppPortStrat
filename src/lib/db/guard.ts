@@ -28,7 +28,15 @@ export interface GuardContext {
 }
 
 /** Models with no engagementId (or global reference data) — never accessible via the scoped client. */
-const DENIED_MODELS = new Set(["Engagement", "BankTemplate", "BankQuestion", "BankAnchor", "EngagementTombstone"]);
+const DENIED_MODELS = new Set([
+  "Engagement",
+  "BankTemplate",
+  "BankQuestion",
+  "BankAnchor",
+  "EngagementTombstone",
+  "CapabilityLibrary",
+  "CapabilityLibraryNode",
+]);
 
 /** Append-only models: reads + create only, for every role. */
 const APPEND_ONLY_MODELS = new Set(["AuditEvent"]);
@@ -123,6 +131,12 @@ const RELATION_MAP: Record<string, Record<string, string>> = {
   AuditEvent: { engagement: "Engagement" },
   EngagementTombstone: {},
   RateLimitHit: {},
+  CapabilityLibrary: { nodes: "CapabilityLibraryNode" },
+  CapabilityLibraryNode: {
+    library: "CapabilityLibrary",
+    parent: "CapabilityLibraryNode",
+    children: "CapabilityLibraryNode",
+  },
 };
 
 export const RELATION_MAP_FOR_TEST = RELATION_MAP;

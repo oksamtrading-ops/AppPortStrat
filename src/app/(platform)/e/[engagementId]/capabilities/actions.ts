@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireEngagementContext } from "@/lib/auth/context";
-import { parseCapabilityPaste, UNASSIGNED } from "@/lib/methodology";
+import { parseCapabilityImport, UNASSIGNED } from "@/lib/methodology";
 import { writeAudit } from "@/lib/audit";
 import type { ScopedDb } from "@/lib/db/scoped";
 
@@ -163,7 +163,7 @@ export async function pasteCapabilities(formData: FormData) {
     .parse({ engagementId: formData.get("engagementId"), text: formData.get("text") });
   const { ctx, db } = await requireEngagementContext(parsed.engagementId, "CONSULTANT");
 
-  const { tree, rowCount } = parseCapabilityPaste(parsed.text);
+  const { tree, rowCount } = parseCapabilityImport(parsed.text);
   if (rowCount > 5000) throw new Error("Paste is limited to 5,000 rows at a time");
   let created = 0;
 
@@ -191,6 +191,58 @@ export async function pasteCapabilities(formData: FormData) {
     action: "capability.paste",
     entityType: "CapabilityNode",
     after: { pastedRows: rowCount, nodesCreated: created },
+  });
+  revalidatePath(`/e/${ctx.engagementId}/capabilities`);
+}
+
+export async function importLibraryAction(formData: FormData) {
+  const parsed = z
+    .object({ engagementId: z.string().min(1), libraryId: z.string().min(1) })
+    .parse({ engagementId: formData.get("engagementId"), libraryId: formData.get("libraryId") });
+  const { ctx, db } = await requireEngagementContext(parsed.engagementId, "ENGAGEMENT_LEAD");
+
+  const { cloneLibraryIntoEngagement } = await import("@/lib/db/library");
+  const { nodeCount } = await cloneLibraryIntoEngagement(ctx.engagementId, parsed.libraryId);
+
+  await writeAudit(db, ctx, {
+    action: "capability.libraryImport",
+    entityType: "CapabilityNode",
+    after: { libraryId: parsed.libraryId, nodeCount },
+  });
+  revalidatePath(`/e/${ctx.engagementId}/capabilities`);
+}
+
+export async function promoteLibraryAction(formData: FormData) {
+  const parsed = z
+    .object({
+      engagementId: z.string().min(1),
+      industry: z.string().trim().min(1).max(100),
+      packName: z.string().trim().min(1).max(200),
+      // The promoter must confirm the tree is shareable: capability names can
+      // reveal client strategy, and the library is visible platform-wide.
+      confidentialityConfirmed: z.literal("on", {
+        message: "Confirm the capability names contain no client-confidential content",
+      }),
+    })
+    .parse({
+      engagementId: formData.get("engagementId"),
+      industry: formData.get("industry"),
+      packName: formData.get("packName"),
+      confidentialityConfirmed: formData.get("confidentialityConfirmed"),
+    });
+  const { ctx, db, session } = await requireEngagementContext(parsed.engagementId, "ENGAGEMENT_LEAD");
+
+  const { promoteEngagementTreeToLibrary } = await import("@/lib/db/library");
+  const library = await promoteEngagementTreeToLibrary(ctx.engagementId, {
+    industry: parsed.industry,
+    name: parsed.packName,
+    createdBy: session.displayName,
+  });
+
+  await writeAudit(db, ctx, {
+    action: "capability.libraryPromote",
+    entityType: "CapabilityNode",
+    after: { libraryId: library.id, industry: parsed.industry, packName: parsed.packName, version: library.version },
   });
   revalidatePath(`/e/${ctx.engagementId}/capabilities`);
 }
