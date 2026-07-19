@@ -1,8 +1,9 @@
+import { cookies } from "next/headers";
 import { requireEngagementContext } from "@/lib/auth/context";
 import { ROLE_LABELS } from "@/lib/auth/roles";
 import { SidebarNav } from "@/components/shell/sidebar-nav";
+import { SIDEBAR_COOKIE } from "@/components/shell/sidebar-cookie";
 import { TopBar } from "@/components/shell/top-bar";
-import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
 
@@ -19,20 +20,23 @@ export default async function EngagementLayout({
   params: Promise<{ engagementId: string }>;
 }) {
   const { engagementId } = await params;
-  const { ctx, session, engagement } = await requireEngagementContext(engagementId);
+  const [{ ctx, session, engagement }, cookieStore] = await Promise.all([
+    requireEngagementContext(engagementId),
+    cookies(),
+  ]);
+  const sidebarCollapsed = cookieStore.get(SIDEBAR_COOKIE)?.value === "1";
 
   return (
     <div className="flex min-h-screen flex-col">
-      <TopBar session={session} subtitle={`${engagement.name} — ${engagement.clientName}`} />
+      <TopBar
+        session={session}
+        subtitle={`${engagement.name} — ${engagement.clientName}`}
+        roleLabel={ROLE_LABELS[ctx.role]}
+        readOnlyLabel={ctx.readOnly ? `Read-only (${engagement.status.toLowerCase()})` : undefined}
+      />
       <div className="flex flex-1">
-        <SidebarNav engagementId={engagementId} role={ctx.role} />
-        <div className="flex-1">
-          <div className="flex items-center gap-2 border-b bg-secondary/50 px-6 py-2">
-            <Badge variant="outline">{ROLE_LABELS[ctx.role]}</Badge>
-            {ctx.readOnly ? <Badge variant="secondary">Read-only ({engagement.status.toLowerCase()})</Badge> : null}
-          </div>
-          <main className="p-6">{children}</main>
-        </div>
+        <SidebarNav engagementId={engagementId} role={ctx.role} defaultCollapsed={sidebarCollapsed} />
+        <main className="min-w-0 flex-1 p-6">{children}</main>
       </div>
     </div>
   );

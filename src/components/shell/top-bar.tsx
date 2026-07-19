@@ -3,16 +3,47 @@ import { UserButton } from "@clerk/nextjs";
 import type { Session } from "@/lib/auth/session";
 import { devSignOut, switchDevUser } from "@/lib/auth/dev-actions";
 import { DEV_USERS } from "@/lib/auth/dev";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-export function TopBar({ session, subtitle }: { session: Session; subtitle?: string }) {
+/**
+ * The single top header: brand, engagement context, the viewer's role, and
+ * identity controls. Role/read-only badges live here (not in a second bar)
+ * so the workspace has exactly one header row.
+ */
+export function TopBar({
+  session,
+  subtitle,
+  roleLabel,
+  readOnlyLabel,
+}: {
+  session: Session;
+  subtitle?: string;
+  roleLabel?: string;
+  readOnlyLabel?: string;
+}) {
   return (
     <header className="flex h-12 items-center justify-between border-b bg-background px-4">
-      <div className="flex items-baseline gap-3">
-        <Link href="/select-engagement" className="font-semibold tracking-tight">
+      <div className="flex min-w-0 items-center gap-3">
+        <Link href="/select-engagement" className="shrink-0 font-semibold tracking-tight">
           APS <span className="text-brand">Platform</span>
         </Link>
-        {subtitle ? <span className="text-muted-foreground text-xs">{subtitle}</span> : null}
+        {subtitle ? (
+          <>
+            <span className="text-border shrink-0">|</span>
+            <span className="text-muted-foreground truncate text-sm">{subtitle}</span>
+          </>
+        ) : null}
+        {roleLabel ? (
+          <Badge variant="outline" className="shrink-0">
+            {roleLabel}
+          </Badge>
+        ) : null}
+        {readOnlyLabel ? (
+          <Badge variant="secondary" className="shrink-0">
+            {readOnlyLabel}
+          </Badge>
+        ) : null}
       </div>
       <div className="flex items-center gap-3">
         {session.mode === "clerk" ? (

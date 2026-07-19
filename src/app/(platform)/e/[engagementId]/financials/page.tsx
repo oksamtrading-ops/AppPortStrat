@@ -4,6 +4,7 @@ import { requireEngagementContext } from "@/lib/auth/context";
 import { computeFinancialScore, DISPOSITION_LABELS } from "@/lib/methodology";
 import type { Disposition } from "@/lib/methodology";
 import { GRAND_TOTAL_SECTIONS, formatMoney } from "@/lib/finance";
+import { loadFinanceRows } from "@/lib/finance-rows";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pill, type PillColor } from "@/components/ui/pill";
@@ -35,33 +36,12 @@ export default async function FinancialsPage({ params }: { params: Promise<{ eng
   if (ctx.role === "CLIENT_RESPONDENT") redirect(`/e/${engagementId}/surveys`);
   const currency = engagement.currency;
 
-  const [financeTemplate, apps, nodes, costRecords] = await Promise.all([
-    db.surveyTemplate.findFirst({
-      where: { type: "FINANCE" },
-      include: { questions: { where: { answerKind: "CURRENCY" }, select: { id: true, section: true } } },
-    }),
-    db.application.findMany({
-      orderBy: { appNumber: "asc" },
-      select: {
-        id: true,
-        appNumber: true,
-        name: true,
-        inScope: true,
-        isUtilized: true,
-        capabilityNodeId: true,
-        result: { select: { computedDisposition: true } },
-        override: { select: { disposition: true } },
-        responses: {
-          where: { template: { type: "FINANCE" } },
-          select: { answers: { select: { questionId: true, numericValue: true } } },
-        },
-      },
-    }),
+  const [{ costed, maxGrandTotal, totalCost, savingsCandidate, costOf }, nodes, costRecords] = await Promise.all([
+    loadFinanceRows(db),
     db.capabilityNode.findMany({ select: { id: true, parentId: true, level: true, name: true } }),
     db.costRecord.findMany({ select: { fiscalYear: true, versionType: true, category: true, amount: true } }),
   ]);
 
-  const sectionByQuestion = new Map((financeTemplate?.questions ?? []).map((q) => [q.id, q.section]));
   const nodeById = new Map(nodes.map((n) => [n.id, n]));
   const l1Of = (nodeId: string | null): string => {
     let node = nodeId ? nodeById.get(nodeId) : undefined;
@@ -73,39 +53,11 @@ export default async function FinancialsPage({ params }: { params: Promise<{ eng
   };
 
   const grandSections = [...GRAND_TOTAL_SECTIONS];
-  const rows = apps.map((app) => {
-    const subtotals = new Map<string, number>();
-    for (const answer of app.responses.flatMap((r) => r.answers)) {
-      if (answer.numericValue === null) continue;
-      const section = sectionByQuestion.get(answer.questionId);
-      if (!section || !GRAND_TOTAL_SECTIONS.has(section)) continue;
-      subtotals.set(section, (subtotals.get(section) ?? 0) + answer.numericValue);
-    }
-    const grandTotal = grandSections.reduce((sum, s) => sum + (subtotals.get(s) ?? 0), 0);
-    const computed = (app.result?.computedDisposition ?? "UNKNOWN") as Disposition;
-    return {
-      app,
-      subtotals,
-      grandTotal,
-      hasCosts: subtotals.size > 0,
-      finalDisposition: ((app.override?.disposition as Disposition | undefined) ?? computed) as Disposition,
-      l1: l1Of(app.capabilityNodeId),
-    };
-  });
-
-  // Financial Score denominator: max grand total across IN-SCOPE apps (quirk #13 resolution).
-  const maxGrandTotal = Math.max(0, ...rows.filter((r) => r.app.inScope).map((r) => r.grandTotal));
-  const costed = rows.filter((r) => r.hasCosts);
-
-  const totalCost = costed.reduce((sum, r) => sum + r.grandTotal, 0);
-  const costOf = (d: Disposition) => costed.filter((r) => r.finalDisposition === d).reduce((s, r) => s + r.grandTotal, 0);
-  const nluCost = costed
-    .filter((r) => r.app.inScope && !r.app.isUtilized)
-    .reduce((s, r) => s + r.grandTotal, 0);
-  const savingsCandidate = costOf("TERMINATE") + nluCost;
-
   const costByL1 = new Map<string, number>();
-  for (const r of costed) costByL1.set(r.l1, (costByL1.get(r.l1) ?? 0) + r.grandTotal);
+  for (const r of costed) {
+    const l1 = l1Of(r.capabilityNodeId);
+    costByL1.set(l1, (costByL1.get(l1) ?? 0) + r.grandTotal);
+  }
   const maxL1Cost = Math.max(1, ...costByL1.values());
 
   // Fiscal-year dataset pivot (PIVOT sheet replacement).
@@ -218,14 +170,14 @@ export default async function FinancialsPage({ params }: { params: Promise<{ eng
                   </TableCell>
                 </TableRow>
               ) : (
-                costed.map(({ app, subtotals, grandTotal, finalDisposition }) => {
+                costed.map(({ appId, appNumber, name, subtotals, grandTotal, finalDisposition }) => {
                   const score = computeFinancialScore(grandTotal, maxGrandTotal);
                   return (
-                    <TableRow key={app.id}>
-                      <TableCell className="text-muted-foreground tabular-nums">{app.appNumber}</TableCell>
+                    <TableRow key={appId}>
+                      <TableCell className="text-muted-foreground tabular-nums">{appNumber}</TableCell>
                       <TableCell>
-                        <Link href={`/e/${engagementId}/surveys/${app.id}/finance`} className="font-medium hover:underline">
-                          {app.name}
+                        <Link href={`/e/${engagementId}/surveys/${appId}/finance`} className="font-medium hover:underline">
+                          {name}
                         </Link>
                       </TableCell>
                       {grandSections.map((s) => (

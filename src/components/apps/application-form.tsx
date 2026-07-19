@@ -133,8 +133,12 @@ export function ApplicationForm({
         <CardHeader>
           <CardTitle>Capability mapping</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-2">
           <CapabilitySelect nodes={nodes} initialNodeId={initial.capabilityNodeId} />
+          <p className="text-muted-foreground text-xs">
+            Recommended — applications without a capability are excluded from the capability heat map and hotspot
+            analysis.
+          </p>
         </CardContent>
       </Card>
 
