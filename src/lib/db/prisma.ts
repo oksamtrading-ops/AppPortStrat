@@ -5,6 +5,7 @@
  */
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { apsPoolConfig } from "./pg-config";
 
 if (typeof window !== "undefined") {
   throw new Error("Database client must never be bundled into client-side code");
@@ -20,13 +21,14 @@ function createClient(): PrismaClient {
   return new PrismaClient({
     // Pool tuned for serverless Postgres (Neon): drop idle sockets before the
     // server severs them (ECONNRESET), keep TCP alive, allow slow cold starts.
-    adapter: new PrismaPg({
-      connectionString,
-      max: 5,
-      idleTimeoutMillis: 10_000,
-      connectionTimeoutMillis: 15_000,
-      keepAlive: true,
-    }),
+    adapter: new PrismaPg(
+      apsPoolConfig(connectionString, {
+        max: 5,
+        idleTimeoutMillis: 10_000,
+        connectionTimeoutMillis: 15_000,
+        keepAlive: true,
+      }),
+    ),
     // Every scoped operation runs inside a batch transaction (RLS set_config +
     // query); hosted Postgres with cold starts needs generous acquisition
     // headroom or concurrent snapshot reads spuriously fail.

@@ -13,6 +13,12 @@ export async function register() {
   const mode = getAuthMode(); // throws when misconfigured
   console.info(`[aps] auth mode: ${mode}`);
 
-  const { assertRlsActive } = await import("@/lib/db/rls-check");
-  await assertRlsActive(Boolean(process.env.VERCEL) || process.env.NODE_ENV === "production");
+  // The RLS probe needs the Node Postgres driver, which must not be bundled
+  // into the Edge instrumentation pass (node:* is unavailable there).
+  // NEXT_RUNTIME is inlined at build time, so this branch — and the Prisma
+  // import behind it — is dead-code-eliminated from the edge bundle.
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { assertRlsActive } = await import("@/lib/db/rls-check");
+    await assertRlsActive(Boolean(process.env.VERCEL) || process.env.NODE_ENV === "production");
+  }
 }

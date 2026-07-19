@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { apsPoolConfig } from "../src/lib/db/pg-config";
 
 const BANK_VERSION = 2;
 
@@ -83,7 +84,7 @@ const BV_CODES: Record<number, string> = {
 async function main() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error("DATABASE_URL is not set");
-  const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+  const prisma = new PrismaClient({ adapter: new PrismaPg(apsPoolConfig(connectionString)) });
 
   const content: QuestionContent = JSON.parse(
     readFileSync(join(__dirname, "seed-data", "question-content.json"), "utf8"),
