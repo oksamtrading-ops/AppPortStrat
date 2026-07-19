@@ -306,13 +306,23 @@ function NodeMenu({
           </Button>
         </form>
         {canDelete ? (
-          <form action={deleteCapabilityNode}>
-            <input type="hidden" name="engagementId" value={engagementId} />
-            <input type="hidden" name="nodeId" value={nodeId} />
-            <Button type="submit" size="sm" variant="ghost" className="text-destructive h-7 w-full justify-start px-2 text-xs">
-              Delete {level === "L0" ? "L0 (and children)" : ""}
-            </Button>
-          </form>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="text-destructive h-7 w-full justify-start px-2 text-xs"
+            onClick={async () => {
+              try {
+                const result = await deleteCapabilityNode({ engagementId, nodeId });
+                if (!result.ok) toast.error(result.error);
+                else toast.success(`Deleted “${name}”`);
+              } catch {
+                toast.error("Could not delete the capability");
+              }
+            }}
+          >
+            Delete {level === "L0" ? "L0 (and children)" : ""}
+          </Button>
         ) : (
           <p className="text-muted-foreground px-2 text-[10px]">Only an Engagement Lead can delete capabilities.</p>
         )}

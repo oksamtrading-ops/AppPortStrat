@@ -79,16 +79,19 @@ export async function renameCapabilityNode(formData: FormData) {
   revalidatePath(`/e/${ctx.engagementId}/capabilities`);
 }
 
-export async function deleteCapabilityNode(formData: FormData) {
+export async function deleteCapabilityNode(input: {
+  engagementId: string;
+  nodeId: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
   const parsed = z
     .object({ engagementId: z.string().min(1), nodeId: z.string().min(1) })
-    .parse({ engagementId: formData.get("engagementId"), nodeId: formData.get("nodeId") });
+    .parse(input);
   // Deleting a capability cascades an entire L0/L1/L2 subtree — Lead-only,
   // consistent with deleteApplication (security review: was Consultant-gated).
   const { ctx, db } = await requireEngagementContext(parsed.engagementId, "ENGAGEMENT_LEAD");
 
   const node = await db.capabilityNode.findUnique({ where: { id: parsed.nodeId } });
-  if (!node) throw new Error("Unknown node");
+  if (!node) return { ok: false, error: "This capability no longer exists" };
 
   // Refuse when the subtree is referenced by applications (DB RESTRICT backstops).
   const subtreeIds = [node.id];
@@ -103,7 +106,10 @@ export async function deleteCapabilityNode(formData: FormData) {
   }
   const referencing = await db.application.count({ where: { capabilityNodeId: { in: subtreeIds } } });
   if (referencing > 0) {
-    throw new Error(`Cannot delete: ${referencing} application(s) are mapped to this capability or its children`);
+    return {
+      ok: false,
+      error: `“${node.name}” still has ${referencing} application${referencing === 1 ? "" : "s"} mapped to it or its children. Reassign ${referencing === 1 ? "it" : "them"} on the Applications page, then delete.`,
+    };
   }
 
   await db.capabilityNode.deleteMany({ where: { id: { in: subtreeIds } } });
@@ -114,6 +120,7 @@ export async function deleteCapabilityNode(formData: FormData) {
     before: { level: node.level, name: node.name, subtreeSize: subtreeIds.length },
   });
   revalidatePath(`/e/${ctx.engagementId}/capabilities`);
+  return { ok: true };
 }
 
 /**
