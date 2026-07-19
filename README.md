@@ -43,6 +43,16 @@ npm run dev
   `db:harden` (row-level security applies; audit log is append-only). Migrations/seeds run as the owner role.
   On Vercel, scope env vars to Production AND Preview deliberately — Preview without keys will not boot.
 
+## Deploying (Vercel)
+
+1. Push to GitHub and import the repo in Vercel (framework: Next.js, no special config).
+2. Environment variables (Production AND Preview — a deployed env without Clerk keys refuses to boot):
+   `DATABASE_URL` (the `aps_runtime` role, `sslmode=require`), `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`,
+   `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SIGNING_SECRET`.
+3. In Clerk: switch to a production instance for the real domain, re-create the org roles, and point a
+   webhook (organizationMembership.*) at `https://<domain>/api/webhooks/clerk`.
+4. Run migrations from a trusted machine: `npx prisma migrate deploy && npm run db:harden` (owner role).
+
 ## Tests
 
 ```bash

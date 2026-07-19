@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { createEngagementAction, setEngagementStatusAction } from "./actions";
+import { confirmPurgeAction, createEngagementAction, setEngagementStatusAction } from "./actions";
 import { EngagementLink } from "@/components/shell/engagement-link";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +31,9 @@ export default async function AdminEngagementsPage() {
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { applications: true, memberships: true } } },
   });
+  // Server component: the request time decides purge eligibility.
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -156,10 +159,45 @@ export default async function AdminEngagementsPage() {
               </TableBody>
             </Table>
             <p className="text-muted-foreground mt-3 text-xs">
-              Purge is two-phase: scheduling makes the engagement read-only for a 7-day grace period; the
-              destructive final step ships together with the full-dataset export (Phase 5) so an export always
-              precedes deletion.
+              Purge is two-phase: scheduling makes the engagement read-only for a 7-day grace period; the final
+              step below requires the full-dataset export to be acknowledged and the engagement name typed back.
             </p>
+
+            {engagements
+              .filter((e) => e.status === "PENDING_PURGE" && e.purgeScheduledAt)
+              .map((e) => {
+                const eligible = e.purgeScheduledAt!.getTime() <= now;
+                return (
+                  <div key={e.id} className="border-destructive/40 mt-4 rounded-lg border p-4">
+                    <div className="font-medium">{e.name} — final purge</div>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      {eligible
+                        ? "The grace period has ended. Download the final export, then confirm below. This permanently deletes all engagement data; only a tombstone remains."
+                        : `Grace period ends ${e.purgeScheduledAt!.toISOString().slice(0, 10)}. Until then the engagement stays read-only.`}
+                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Button asChild size="sm" variant="outline">
+                        <a href={`/e/${e.id}/export`} download>
+                          Download final export (XLSX)
+                        </a>
+                      </Button>
+                    </div>
+                    {eligible ? (
+                      <form action={confirmPurgeAction} className="mt-3 flex flex-wrap items-center gap-2">
+                        <input type="hidden" name="engagementId" value={e.id} />
+                        <label className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                          <input type="checkbox" name="exportAcknowledged" required />
+                          I downloaded the final export
+                        </label>
+                        <Input name="confirmName" placeholder={`Type "${e.name}" to confirm`} required className="h-8 w-64 text-sm" />
+                        <Button type="submit" size="sm" variant="destructive">
+                          Permanently purge
+                        </Button>
+                      </form>
+                    ) : null}
+                  </div>
+                );
+              })}
           </CardContent>
         </Card>
       </main>

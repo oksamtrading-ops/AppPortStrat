@@ -109,6 +109,57 @@ export async function setEngagementStatusAction(formData: FormData) {
   revalidatePath("/admin/engagements");
 }
 
+const confirmPurgeSchema = z.object({
+  engagementId: z.string().min(1),
+  confirmName: z.string().min(1),
+  exportAcknowledged: z.literal("on", { message: "Download the final export and acknowledge it first" }),
+});
+
+/**
+ * Final purge step (two-phase, APP-SPEC §4.1): only after the grace period,
+ * only with the typed engagement name, and only after acknowledging the
+ * final full-dataset export. Hard-deletes everything (cascade) and leaves a
+ * tombstone that has no foreign keys — the one permanent record.
+ */
+export async function confirmPurgeAction(formData: FormData) {
+  const session = await requirePlatformAdmin();
+  const parsed = confirmPurgeSchema.parse({
+    engagementId: formData.get("engagementId"),
+    confirmName: formData.get("confirmName"),
+    exportAcknowledged: formData.get("exportAcknowledged"),
+  });
+
+  const db = adminDb();
+  const engagement = await db.engagement.findUnique({
+    where: { id: parsed.engagementId },
+    include: { _count: { select: { applications: true, memberships: true, answers: true, auditEvents: true } } },
+  });
+  if (!engagement) throw new Error("Engagement not found");
+  if (engagement.status !== "PENDING_PURGE" || !engagement.purgeScheduledAt) {
+    throw new Error("Purge has not been scheduled for this engagement");
+  }
+  if (engagement.purgeScheduledAt.getTime() > Date.now()) {
+    throw new Error(`The grace period ends ${engagement.purgeScheduledAt.toISOString().slice(0, 10)} — purge is not yet eligible`);
+  }
+  if (parsed.confirmName.trim() !== engagement.name) {
+    throw new Error("Typed name does not match the engagement");
+  }
+
+  await db.engagement.delete({ where: { id: engagement.id } }); // cascades everything
+  await db.engagementTombstone.create({
+    data: {
+      engagementId: engagement.id,
+      engagementName: engagement.name,
+      clientName: engagement.clientName,
+      deletedByUserId: session.userId,
+      deletedByDisplay: session.displayName,
+      counts: engagement._count,
+    },
+  });
+
+  revalidatePath("/admin/engagements");
+}
+
 async function audit(
   engagementId: string,
   actorUserId: string,

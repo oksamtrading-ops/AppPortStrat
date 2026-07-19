@@ -1,4 +1,4 @@
-import "server-only";
+// NOTE: no "server-only" marker — exercised by verification scripts; only server code imports this.
 import type { ScopedDb } from "@/lib/db/scoped";
 import type { Disposition } from "@/lib/methodology";
 

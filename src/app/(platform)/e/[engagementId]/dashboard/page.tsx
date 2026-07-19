@@ -80,11 +80,31 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground text-sm">
-          Live portfolio KPIs over {pool.length} in-scope, utilized application{pool.length === 1 ? "" : "s"}.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground text-sm">
+            Live portfolio KPIs over {pool.length} in-scope, utilized application{pool.length === 1 ? "" : "s"}.
+          </p>
+        </div>
+        {ctx.role === "ENGAGEMENT_LEAD" || ctx.role === "CONSULTANT" ? (
+          <div className="flex gap-2">
+            <a
+              href={`/e/${engagementId}/deck`}
+              download
+              className="hover:bg-secondary rounded-lg border px-3 py-1.5 text-sm font-medium"
+            >
+              Export deck (PPTX)
+            </a>
+            <a
+              href={`/e/${engagementId}/export`}
+              download
+              className="hover:bg-secondary rounded-lg border px-3 py-1.5 text-sm font-medium"
+            >
+              Export data (XLSX)
+            </a>
+          </div>
+        ) : null}
       </div>
 
       {/* 2×2 disposition matrix + urgent alerts */}

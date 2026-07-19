@@ -28,7 +28,7 @@ export interface GuardContext {
 }
 
 /** Models with no engagementId (or global reference data) — never accessible via the scoped client. */
-const DENIED_MODELS = new Set(["Engagement", "BankTemplate", "BankQuestion", "BankAnchor"]);
+const DENIED_MODELS = new Set(["Engagement", "BankTemplate", "BankQuestion", "BankAnchor", "EngagementTombstone"]);
 
 /** Append-only models: reads + create only, for every role. */
 const APPEND_ONLY_MODELS = new Set(["AuditEvent"]);

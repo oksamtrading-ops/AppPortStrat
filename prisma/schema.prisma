@@ -522,3 +522,21 @@ model AuditEvent {
   @@unique([id, engagementId])
   @@index([engagementId, createdAt])
 }
+
+// ───────────────────────────── Platform level ─────────────────────────────
+
+/// Survives engagement deletion by design: NO foreign keys, admin door only
+/// (the tenancy guard denies it entirely). The permanent record that a purge
+/// happened, who ran it, and how much data it removed.
+model EngagementTombstone {
+  id               String   @id @default(cuid())
+  engagementId     String
+  engagementName   String
+  clientName       String
+  deletedByUserId  String
+  deletedByDisplay String
+  deletedAt        DateTime @default(now())
+  counts           Json?
+
+  @@index([deletedAt])
+}

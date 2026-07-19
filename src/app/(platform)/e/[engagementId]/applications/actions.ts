@@ -198,6 +198,44 @@ export async function importApplications(input: { engagementId: string; text: st
   return { ok: true as const, created, unmappedCapabilities, skipped: errors.length };
 }
 
+/**
+ * Legacy APS v5.0 workbook import (Lead only, empty engagement only).
+ * Reads cached values; never evaluates formulas. 30 MB cap.
+ */
+export async function importLegacyWorkbook(formData: FormData) {
+  const engagementId = z.string().min(1).parse(formData.get("engagementId"));
+  const { ctx, db, engagement } = await requireEngagementContext(engagementId, "ENGAGEMENT_LEAD");
+
+  const file = formData.get("file");
+  if (!(file instanceof File)) return { ok: false as const, error: "No file provided" };
+  if (file.size > 30 * 1024 * 1024) return { ok: false as const, error: "File exceeds the 30 MB limit" };
+  if (!/\.(xlsx|xlsm)$/i.test(file.name)) return { ok: false as const, error: "Expected an .xlsx or .xlsm workbook" };
+
+  const questionRefs = await db.surveyQuestion.findMany({
+    select: { code: true, legacyRef: true, answerKind: true },
+  });
+
+  const { parseLegacyWorkbook, applyLegacyImport } = await import("@/lib/legacy-import");
+  let summary;
+  try {
+    const parsed = await parseLegacyWorkbook(await file.arrayBuffer(), questionRefs);
+    summary = { ...(await applyLegacyImport(ctx, db, parsed)), warnings: parsed.warnings };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof Error ? err.message : "Import failed" };
+  }
+
+  const { recomputeEngagement } = await import("@/lib/recompute");
+  await recomputeEngagement(ctx, db, engagement);
+  await writeAudit(db, ctx, {
+    action: "import.legacy-workbook",
+    entityType: "Engagement",
+    entityId: ctx.engagementId,
+    after: { file: file.name, ...summary },
+  });
+  revalidatePath(`/e/${ctx.engagementId}/applications`);
+  return { ok: true as const, ...summary };
+}
+
 const FLAGS = ["inScope", "isUtilized", "isReplaced", "inFlight", "missionCritical"] as const;
 
 export async function toggleApplicationFlag(input: {
