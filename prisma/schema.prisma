@@ -143,6 +143,7 @@ model Engagement {
   commentThreads     Comment[]
   notifications      Notification[]
   tasks              Task[]
+  dispositionSignOffs DispositionSignOff[]
 }
 
 model Membership {
@@ -159,6 +160,7 @@ model Membership {
   notifications    Notification[]
   assignedTasks    Task[] @relation("TaskAssignee")
   createdTasks     Task[] @relation("TaskCreator")
+  signOffs         DispositionSignOff[]
 
   @@unique([id, engagementId])
   @@unique([engagementId, email])
@@ -334,6 +336,7 @@ model Application {
   costRecords CostRecord[]
   commentThreads Comment[]
   tasks          Task[]
+  signOff        DispositionSignOff?
 
   @@unique([id, engagementId])
   @@unique([engagementId, appNumber])
@@ -355,9 +358,10 @@ model CapabilityNode {
   sourceLibraryId String?
   sourceCode      String?
 
-  engagement Engagement       @relation(fields: [engagementId], references: [id], onDelete: Cascade)
-  parent     CapabilityNode?  @relation("CapabilityTree", fields: [parentId, engagementId], references: [id, engagementId], onDelete: Cascade)
-  children   CapabilityNode[] @relation("CapabilityTree")
+  engagement     Engagement       @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  parent         CapabilityNode?  @relation("CapabilityTree", fields: [parentId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  children       CapabilityNode[] @relation("CapabilityTree")
+  commentThreads Comment[]
 
   // Root-level (parentId null) name uniqueness is enforced in the service
   // layer: Postgres treats NULLs as distinct in unique indexes.
@@ -576,7 +580,10 @@ model Task {
 model Comment {
   id                 String    @id @default(cuid())
   engagementId       String
-  applicationId      String
+  /// Exactly ONE of applicationId / capabilityNodeId is set (DB CHECK
+  /// "Comment_target_xor") — a comment thread hangs off one target.
+  applicationId      String?
+  capabilityNodeId   String?
   authorMembershipId String
   parentId           String? // one-level threads: replies reference the root comment
   body               String
@@ -584,14 +591,38 @@ model Comment {
   internal           Boolean   @default(true)
   createdAt          DateTime  @default(now())
 
-  engagement  Engagement  @relation(fields: [engagementId], references: [id], onDelete: Cascade)
-  application Application @relation(fields: [applicationId, engagementId], references: [id, engagementId], onDelete: Cascade)
-  author      Membership  @relation(fields: [authorMembershipId, engagementId], references: [id, engagementId], onDelete: Cascade)
-  parent      Comment?    @relation("CommentThread", fields: [parentId, engagementId], references: [id, engagementId], onDelete: Cascade)
-  replies     Comment[]   @relation("CommentThread")
+  engagement     Engagement      @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  application    Application?    @relation(fields: [applicationId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  capabilityNode CapabilityNode? @relation(fields: [capabilityNodeId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  author         Membership      @relation(fields: [authorMembershipId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  parent         Comment?        @relation("CommentThread", fields: [parentId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  replies        Comment[]       @relation("CommentThread")
 
   @@unique([id, engagementId])
   @@index([engagementId, applicationId])
+  @@index([engagementId, capabilityNodeId])
+}
+
+/// Client agreement on an application's FINAL disposition, recorded by the
+/// Lead (e.g. after a workshop). Stores a SNAPSHOT of the disposition at
+/// sign-off; if a later recompute/override changes the live value, the UI
+/// flags the sign-off as stale rather than silently rewriting what was agreed.
+model DispositionSignOff {
+  id                   String   @id @default(cuid())
+  engagementId         String
+  applicationId        String
+  disposition          String // Disposition enum value at the moment of sign-off
+  signedByMembershipId String
+  note                 String?
+  createdAt            DateTime @default(now())
+
+  engagement  Engagement  @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  signedBy    Membership  @relation(fields: [signedByMembershipId, engagementId], references: [id, engagementId], onDelete: Cascade)
+
+  @@unique([id, engagementId])
+  @@unique([applicationId, engagementId])
+  @@index([engagementId])
 }
 
 model Notification {

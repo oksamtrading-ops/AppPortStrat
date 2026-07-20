@@ -6,26 +6,33 @@ import { requireEngagementContext } from "@/lib/auth/context";
 import { writeAudit } from "@/lib/audit";
 
 /**
- * Collaboration C1: threaded comments on applications.
+ * Collaboration C1/C3: threaded comments on applications AND capabilities.
  * - Lead/Consultant write; Client Viewers read shared (internal:false) only —
  *   enforced by the guard's row predicate + traversal restriction, not here.
  * - Respondents have no access (model not in their allowlist).
  * - internal defaults to TRUE (Deloitte-only) — sharing is the deliberate act.
  * - @mentions match member display names (longest-first) and create
  *   notifications; viewers are never notified about internal comments.
+ * - A comment targets exactly ONE of application / capability (DB CHECK).
  */
 
-const addSchema = z.object({
-  engagementId: z.string().min(1),
-  applicationId: z.string().min(1),
-  parentId: z.string().min(1).nullable(),
-  body: z.string().trim().min(1).max(5000),
-  internal: z.boolean(),
-});
+const addSchema = z
+  .object({
+    engagementId: z.string().min(1),
+    applicationId: z.string().min(1).nullable().optional(),
+    capabilityNodeId: z.string().min(1).nullable().optional(),
+    parentId: z.string().min(1).nullable(),
+    body: z.string().trim().min(1).max(5000),
+    internal: z.boolean(),
+  })
+  .refine((v) => Boolean(v.applicationId) !== Boolean(v.capabilityNodeId), {
+    message: "Exactly one of applicationId / capabilityNodeId is required",
+  });
 
 export async function addComment(input: {
   engagementId: string;
-  applicationId: string;
+  applicationId?: string | null;
+  capabilityNodeId?: string | null;
   parentId: string | null;
   body: string;
   internal: boolean;
@@ -34,8 +41,18 @@ export async function addComment(input: {
   const { ctx, db } = await requireEngagementContext(parsed.engagementId, "CONSULTANT");
 
   try {
-    const application = await db.application.findUnique({ where: { id: parsed.applicationId }, select: { id: true, name: true } });
-    if (!application) return { ok: false, error: "Unknown application" };
+    // Resolve the target (application or capability) inside the tenant scope.
+    let target: { kind: "application" | "capability"; id: string; name: string };
+    if (parsed.applicationId) {
+      const application = await db.application.findUnique({ where: { id: parsed.applicationId }, select: { id: true, name: true } });
+      if (!application) return { ok: false, error: "Unknown application" };
+      target = { kind: "application", id: application.id, name: application.name };
+    } else {
+      const node = await db.capabilityNode.findUnique({ where: { id: parsed.capabilityNodeId! }, select: { id: true, name: true } });
+      if (!node) return { ok: false, error: "Unknown capability" };
+      target = { kind: "capability", id: node.id, name: node.name };
+    }
+
     if (parsed.parentId) {
       const parent = await db.comment.findUnique({ where: { id: parsed.parentId }, select: { id: true, parentId: true } });
       if (!parent) return { ok: false, error: "The comment you replied to no longer exists" };
@@ -45,7 +62,8 @@ export async function addComment(input: {
     const comment = await db.comment.create({
       data: {
         engagementId: ctx.engagementId,
-        applicationId: application.id,
+        applicationId: target.kind === "application" ? target.id : null,
+        capabilityNodeId: target.kind === "capability" ? target.id : null,
         authorMembershipId: ctx.membershipId,
         parentId: parsed.parentId,
         body: parsed.body,
@@ -79,8 +97,11 @@ export async function addComment(input: {
           recipientMembershipId,
           kind,
           payload: {
-            applicationId: application.id,
-            applicationName: application.name,
+            // applicationId stays for backward compatibility with stored rows;
+            // the bell routes on whichever target id is present.
+            applicationId: target.kind === "application" ? target.id : null,
+            capabilityNodeId: target.kind === "capability" ? target.id : null,
+            applicationName: target.name,
             actorDisplay: ctx.actorDisplay,
             snippet: parsed.body.slice(0, 140),
           },
@@ -92,9 +113,19 @@ export async function addComment(input: {
       action: "comment.add",
       entityType: "Comment",
       entityId: comment.id,
-      after: { applicationId: application.id, internal: parsed.internal, reply: Boolean(parsed.parentId), notified: recipients.size },
+      after: {
+        applicationId: target.kind === "application" ? target.id : undefined,
+        capabilityNodeId: target.kind === "capability" ? target.id : undefined,
+        internal: parsed.internal,
+        reply: Boolean(parsed.parentId),
+        notified: recipients.size,
+      },
     });
-    revalidatePath(`/e/${ctx.engagementId}/applications/${application.id}/edit`);
+    revalidatePath(
+      target.kind === "application"
+        ? `/e/${ctx.engagementId}/applications/${target.id}/edit`
+        : `/e/${ctx.engagementId}/capabilities/${target.id}`,
+    );
     return { ok: true };
   } catch (err) {
     console.error("[aps] addComment failed:", err);

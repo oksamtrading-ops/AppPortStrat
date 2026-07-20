@@ -25,6 +25,8 @@ const FRIENDLY: Record<string, string> = {
   "assignment.create": "assigned surveys",
   "comment.add": "commented",
   "task.create": "created a task",
+  "disposition.signoff.record": "recorded a disposition sign-off",
+  "disposition.signoff.revoke": "revoked a disposition sign-off",
   "task.complete": "completed a task",
   "task.reopen": "reopened a task",
   "ai.narrative.generate": "generated an AI narrative",

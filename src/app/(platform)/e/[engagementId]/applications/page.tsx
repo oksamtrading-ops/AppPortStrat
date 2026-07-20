@@ -68,6 +68,7 @@ export default async function ApplicationsPage({
       include: {
         result: true,
         override: true,
+        signOff: { select: { disposition: true } },
         responses: { select: { status: true } },
         _count: { select: { commentThreads: true } },
       },
@@ -310,6 +311,20 @@ export default async function ApplicationsPage({
                         {DISPOSITION_LABELS[finalDisposition]}
                         {app.override ? " *" : ""}
                       </Pill>
+                      {app.signOff ? (
+                        app.signOff.disposition === finalDisposition ? (
+                          <span className="ml-1 text-xs text-green-700" title="Disposition signed off by the client">
+                            ✓
+                          </span>
+                        ) : (
+                          <span
+                            className="ml-1 text-xs text-amber-600"
+                            title={`Sign-off is stale — agreed ${DISPOSITION_LABELS[(app.signOff.disposition as Disposition) ?? "UNKNOWN"]}`}
+                          >
+                            ✓!
+                          </span>
+                        )
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-center">
                       <Link href={`/e/${engagementId}/surveys/${app.id}`}>

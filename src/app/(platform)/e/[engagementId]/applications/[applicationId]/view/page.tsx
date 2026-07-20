@@ -22,7 +22,11 @@ export default async function ViewApplicationPage({
 
   const app = await db.application.findUnique({
     where: { id: applicationId },
-    include: { result: true, override: { select: { disposition: true } } },
+    include: {
+      result: true,
+      override: { select: { disposition: true } },
+      signOff: { select: { disposition: true, createdAt: true } },
+    },
   });
   if (!app) notFound();
 
@@ -59,6 +63,16 @@ export default async function ViewApplicationPage({
             <div><dt className="text-muted-foreground text-xs">Business Value</dt><dd className="font-medium tabular-nums">{app.result?.bvScore != null ? app.result.bvScore.toFixed(1) : "—"}</dd></div>
             <div><dt className="text-muted-foreground text-xs">IT Health</dt><dd className="font-medium tabular-nums">{app.result?.itScore != null ? app.result.itScore.toFixed(1) : "—"}</dd></div>
             <div><dt className="text-muted-foreground text-xs">Scope</dt><dd className="font-medium">{app.inScope ? (app.isUtilized ? "In scope" : "No longer utilized") : "Out of scope"}</dd></div>
+            <div>
+              <dt className="text-muted-foreground text-xs">Sign-off</dt>
+              <dd className="font-medium">
+                {app.signOff
+                  ? app.signOff.disposition === disposition
+                    ? `Signed off ${fmt(app.signOff.createdAt).slice(0, 10)}`
+                    : "Under review"
+                  : "Pending"}
+              </dd>
+            </div>
           </dl>
           {app.description ? <p className="text-muted-foreground mt-3 text-sm">{app.description}</p> : null}
         </CardContent>

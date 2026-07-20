@@ -267,4 +267,45 @@ describe("Collaboration C1: comment visibility and notification privacy", () => 
     expect(() => guardArgs("Comment", "findMany", {}, respondent)).toThrow(/cannot access/);
     expect(() => guardArgs("Notification", "findMany", {}, respondent)).toThrow(/cannot access/);
   });
+
+  // ── C3: capability comments + disposition sign-off ──
+
+  it("applies the viewer comment rules to capability comments too", () => {
+    // Row predicate on top-level reads targeting a capability thread.
+    const v = guardArgs("Comment", "findMany", { where: { capabilityNodeId: "cap1" } }, viewer);
+    expect(JSON.stringify(v.where)).toContain('"internal":false');
+    // Traversal via CapabilityNode.commentThreads is denied for viewers, open for leads.
+    expect(() => guardArgs("CapabilityNode", "findMany", { include: { commentThreads: true } }, viewer)).toThrow(/top-level/);
+    expect(() => guardArgs("CapabilityNode", "findMany", { include: { commentThreads: true } }, lead)).not.toThrow();
+  });
+
+  it("scopes DispositionSignOff like any tenant model; viewers read-only; respondents denied", () => {
+    const r = guardArgs("DispositionSignOff", "findMany", {}, viewer);
+    expect(JSON.stringify(r.where)).toContain('"engagementId":"eng1"');
+    expect(() =>
+      guardArgs("DispositionSignOff", "create", { data: { applicationId: "a1", disposition: "TERMINATE", signedByMembershipId: "mem1" } }, viewer),
+    ).toThrow(/read-only/);
+    expect(() => guardArgs("DispositionSignOff", "findMany", {}, respondent)).toThrow(/cannot access/);
+    // Lead upsert keyed on the composite unique gets the tenancy scope spread in.
+    const u = guardArgs(
+      "DispositionSignOff",
+      "upsert",
+      {
+        where: { applicationId_engagementId: { applicationId: "a1", engagementId: "eng1" } },
+        create: { applicationId: "a1", disposition: "TERMINATE", signedByMembershipId: "mem1" },
+        update: { disposition: "TERMINATE" },
+      },
+      lead,
+    );
+    expect(JSON.stringify(u.create)).toContain('"engagementId":"eng1"');
+    // Foreign-engagement selector is rejected outright.
+    expect(() =>
+      guardArgs(
+        "DispositionSignOff",
+        "findUnique",
+        { where: { applicationId_engagementId: { applicationId: "a1", engagementId: "OTHER" } } },
+        lead,
+      ),
+    ).toThrow(/Foreign engagementId/);
+  });
 });

@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { requireEngagementContext } from "@/lib/auth/context";
+import { DISPOSITION_LABELS, type Disposition } from "@/lib/methodology";
 import { ApplicationForm } from "@/components/apps/application-form";
 import { loadApplicationFormData } from "../../form-data";
 import { CommentsPanel, type CommentView } from "@/components/apps/comments-panel";
+import { SignOffCard } from "@/components/apps/signoff-card";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,14 @@ export default async function EditApplicationPage({
   const { engagementId, applicationId } = await params;
   const { ctx, db } = await requireEngagementContext(engagementId, "CONSULTANT");
 
-  const app = await db.application.findUnique({ where: { id: applicationId } });
+  const app = await db.application.findUnique({
+    where: { id: applicationId },
+    include: {
+      result: { select: { computedDisposition: true } },
+      override: { select: { disposition: true } },
+      signOff: { include: { signedBy: { select: { displayName: true, email: true } } } },
+    },
+  });
   if (!app) notFound();
 
   const { nodes, applicationTypes, actionPlanOptions } = await loadApplicationFormData(db);
@@ -38,6 +47,19 @@ export default async function EditApplicationPage({
   const comments: CommentView[] = commentRows
     .filter((c) => !c.parentId)
     .map((root) => ({ ...toView(root), replies: commentRows.filter((c) => c.parentId === root.id).map(toView) }));
+
+  const finalDisposition = ((app.override?.disposition as Disposition | undefined) ??
+    (app.result?.computedDisposition as Disposition | undefined) ??
+    "UNKNOWN") as Disposition;
+  const signOff = app.signOff
+    ? {
+        dispositionLabel: DISPOSITION_LABELS[(app.signOff.disposition as Disposition) ?? "UNKNOWN"],
+        signedByName: app.signOff.signedBy.displayName ?? app.signOff.signedBy.email,
+        signedAt: fmt(app.signOff.createdAt),
+        note: app.signOff.note,
+        stale: app.signOff.disposition !== finalDisposition,
+      }
+    : null;
 
   return (
     <div className="max-w-3xl space-y-4">
@@ -68,6 +90,15 @@ export default async function EditApplicationPage({
           inFlight: app.inFlight,
           capabilityNodeId: app.capabilityNodeId,
         }}
+      />
+
+      <SignOffCard
+        engagementId={engagementId}
+        applicationId={applicationId}
+        currentDispositionLabel={DISPOSITION_LABELS[finalDisposition]}
+        hasDisposition={finalDisposition !== "UNKNOWN"}
+        signOff={signOff}
+        canSign={ctx.role === "ENGAGEMENT_LEAD" && !ctx.readOnly}
       />
 
       <CommentsPanel

@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
+import { MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +22,7 @@ export interface L2TileData {
   id: string;
   name: string;
   isPlaceholder: boolean;
+  commentCount: number;
   appCount: number;
   bucket: HeatBucketView;
 }
@@ -28,6 +31,7 @@ export interface L1CardData {
   id: string;
   name: string;
   isPlaceholder: boolean;
+  commentCount: number;
   appCount: number;
   terminate: number;
   retoolRedesign: number;
@@ -39,7 +43,23 @@ export interface L0SectionData {
   id: string;
   name: string;
   isPlaceholder: boolean;
+  commentCount: number;
   l1s: L1CardData[];
+}
+
+/** Discussion badge — shown only when a capability has comments. */
+function CommentBadge({ engagementId, nodeId, count }: { engagementId: string; nodeId: string; count: number }) {
+  if (count === 0) return null;
+  return (
+    <Link
+      href={`/e/${engagementId}/capabilities/${nodeId}`}
+      onClick={(e) => e.stopPropagation()}
+      title={`${count} comment${count === 1 ? "" : "s"}`}
+      className="text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5 text-xs"
+    >
+      <MessageSquare className="size-3" /> {count}
+    </Link>
+  );
 }
 
 const BUCKET_DOT: Record<Exclude<HeatBucketView, null>, string> = {
@@ -115,7 +135,12 @@ export function CapabilityBoard({
             <Badge variant="outline" className="rounded bg-foreground text-background">
               L0
             </Badge>
-            <h2 className="text-sm font-semibold tracking-tight">{l0.name}</h2>
+            <h2 className="text-sm font-semibold tracking-tight">
+              <Link href={`/e/${engagementId}/capabilities/${l0.id}`} className="hover:underline">
+                {l0.name}
+              </Link>
+            </h2>
+            <CommentBadge engagementId={engagementId} nodeId={l0.id} count={l0.commentCount} />
             {l0.isPlaceholder ? <Pill color="amber">placeholder — resolve</Pill> : null}
             {canEdit ? (
               <NodeMenu engagementId={engagementId} nodeId={l0.id} name={l0.name} level="L0" canDelete={canDelete} />
@@ -158,7 +183,14 @@ export function CapabilityBoard({
                     <Badge variant="outline" className="rounded bg-foreground text-background">
                       L1
                     </Badge>
-                    <span className="font-semibold">{l1.name}</span>
+                    <Link
+                      href={`/e/${engagementId}/capabilities/${l1.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="font-semibold hover:underline"
+                    >
+                      {l1.name}
+                    </Link>
+                    <CommentBadge engagementId={engagementId} nodeId={l1.id} count={l1.commentCount} />
                     {l1.isPlaceholder ? <Pill color="amber">placeholder</Pill> : null}
                     {canEdit ? <NodeMenu engagementId={engagementId} nodeId={l1.id} name={l1.name} level="L1" canDelete={canDelete} /> : null}
                   </span>
@@ -228,10 +260,15 @@ export function CapabilityBoard({
                             )}
                           />
                         </div>
-                        <div className="mt-1.5 text-sm font-medium leading-snug">{l2.name}</div>
+                        <div className="mt-1.5 text-sm font-medium leading-snug">
+                          <Link href={`/e/${engagementId}/capabilities/${l2.id}`} className="hover:underline">
+                            {l2.name}
+                          </Link>
+                        </div>
                         <div className="text-muted-foreground mt-1 flex items-center justify-between text-xs">
-                          <span>
+                          <span className="flex items-center gap-2">
                             {l2.appCount} app{l2.appCount === 1 ? "" : "s"}
+                            <CommentBadge engagementId={engagementId} nodeId={l2.id} count={l2.commentCount} />
                           </span>
                           {canEdit ? (
                             <span className="invisible flex gap-1 group-hover:visible">

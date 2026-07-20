@@ -9,6 +9,8 @@ export interface NotificationView {
   id: string;
   kind: string;
   applicationId: string;
+  capabilityNodeId: string;
+  /** Target display name — an application or a capability. */
   applicationName: string;
   actorDisplay: string;
   snippet: string;
@@ -58,7 +60,13 @@ export function NotificationBell({
             items.map((n) => (
               <Link
                 key={n.id}
-                href={n.applicationId ? `/e/${engagementId}/applications/${n.applicationId}/edit` : `/e/${engagementId}/tasks`}
+                href={
+                  n.applicationId
+                    ? `/e/${engagementId}/applications/${n.applicationId}/edit`
+                    : n.capabilityNodeId
+                      ? `/e/${engagementId}/capabilities/${n.capabilityNodeId}`
+                      : `/e/${engagementId}/tasks`
+                }
                 onClick={() => setOpen(false)}
                 className={`hover:bg-accent block rounded px-3 py-2 text-sm ${n.unread ? "bg-secondary/60" : ""}`}
               >

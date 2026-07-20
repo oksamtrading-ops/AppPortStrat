@@ -28,10 +28,17 @@ export default async function CapabilitiesPage({
   const { ctx, db, engagement } = await requireEngagementContext(engagementId);
   if (ctx.role === "CLIENT_RESPONDENT") redirect(`/e/${engagementId}/surveys`);
 
-  const [{ nodes, tallyOf }, thresholds] = await Promise.all([
+  const [{ nodes, tallyOf }, thresholds, commentCounts] = await Promise.all([
     loadCapabilityTallies(db),
     db.thresholdConfig.findFirst(),
+    // Viewer counts reflect shared comments only (guard row predicate).
+    db.comment.groupBy({
+      by: ["capabilityNodeId"],
+      where: { capabilityNodeId: { not: null } },
+      _count: { _all: true },
+    }),
   ]);
+  const commentsOf = new Map(commentCounts.filter((c) => c.capabilityNodeId).map((c) => [c.capabilityNodeId as string, c._count._all]));
   const heat = {
     t1: thresholds?.heatT1 ?? THRESHOLD_DEFAULTS.heatT1,
     t2: thresholds?.heatT2 ?? THRESHOLD_DEFAULTS.heatT2,
@@ -44,6 +51,7 @@ export default async function CapabilitiesPage({
       id: l0.id,
       name: l0.name,
       isPlaceholder: l0.isPlaceholder,
+      commentCount: commentsOf.get(l0.id) ?? 0,
       l1s: childrenOf(l0.id).map((l1): L1CardData => {
         const l2s = childrenOf(l1.id).map((l2) => {
           const t = tallyOf(l2.id);
@@ -51,6 +59,7 @@ export default async function CapabilitiesPage({
             id: l2.id,
             name: l2.name,
             isPlaceholder: l2.isPlaceholder,
+            commentCount: commentsOf.get(l2.id) ?? 0,
             appCount: t.total,
             bucket: computeHeatBucket(
               { appCount: t.known, terminateCount: t.terminate, retoolRedesignCount: t.retool + t.redesign },
@@ -74,6 +83,7 @@ export default async function CapabilitiesPage({
           id: l1.id,
           name: l1.name,
           isPlaceholder: l1.isPlaceholder,
+          commentCount: commentsOf.get(l1.id) ?? 0,
           appCount: agg.total,
           terminate: agg.terminate,
           retoolRedesign: agg.retoolRedesign,

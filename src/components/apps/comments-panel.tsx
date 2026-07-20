@@ -18,19 +18,21 @@ export interface CommentView {
 }
 
 /**
- * Threaded discussion on one application. Internal (Deloitte-only) is the
- * DEFAULT; sharing with client viewers is the deliberate act. Mention
- * teammates by typing @Their Name.
+ * Threaded discussion on one application OR one capability (exactly one target
+ * prop is set). Internal (Deloitte-only) is the DEFAULT; sharing with client
+ * viewers is the deliberate act. Mention teammates by typing @Their Name.
  */
 export function CommentsPanel({
   engagementId,
-  applicationId,
+  applicationId = null,
+  capabilityNodeId = null,
   comments,
   canWrite,
   memberNames,
 }: {
   engagementId: string;
-  applicationId: string;
+  applicationId?: string | null;
+  capabilityNodeId?: string | null;
   comments: CommentView[];
   canWrite: boolean;
   memberNames: string[];
@@ -45,7 +47,7 @@ export function CommentsPanel({
   function post(parentId: string | null, text: string, isInternal: boolean, after: () => void) {
     if (text.trim().length === 0) return;
     startTransition(async () => {
-      const result = await addComment({ engagementId, applicationId, parentId, body: text, internal: isInternal });
+      const result = await addComment({ engagementId, applicationId, capabilityNodeId, parentId, body: text, internal: isInternal });
       if (!result.ok) return void toast.error(result.error);
       after();
       router.refresh();

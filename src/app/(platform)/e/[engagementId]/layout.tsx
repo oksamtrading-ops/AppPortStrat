@@ -46,11 +46,12 @@ export default async function EngagementLayout({
                 engagementId,
                 unread: notifications.filter((n) => !n.readAt).length,
                 items: notifications.map((n) => {
-                  const p = n.payload as { applicationId?: string; applicationName?: string; actorDisplay?: string; snippet?: string };
+                  const p = n.payload as { applicationId?: string | null; capabilityNodeId?: string | null; applicationName?: string; actorDisplay?: string; snippet?: string };
                   return {
                     id: n.id,
                     kind: n.kind,
                     applicationId: p.applicationId ?? "",
+                    capabilityNodeId: p.capabilityNodeId ?? "",
                     applicationName: p.applicationName ?? "an application",
                     actorDisplay: p.actorDisplay ?? "Someone",
                     snippet: p.snippet ?? "",

@@ -33,6 +33,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
         capabilityNodeId: true,
         result: true,
         override: { select: { disposition: true } },
+        signOff: { select: { disposition: true } },
       },
       orderBy: { name: "asc" },
     }),
@@ -151,7 +152,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
       </div>
 
       {/* Executive summary strip */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
         <StatCard value={String(apps.length)} label="Applications" sub={`${inScope} in scope · ${outOfScope} out of scope`} />
         <StatCard
           value={pool.length === 0 ? "—" : `${Math.round((scored / Math.max(pool.length, 1)) * 100)}%`}
@@ -173,6 +174,22 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
           label="Savings candidate"
           sub="Terminate + not-utilized annual cost"
           tone={finance.savingsCandidate > 0 ? "text-red-600" : undefined}
+        />
+        <StatCard
+          value={
+            (() => {
+              const withDisposition = pool.filter((a) => finalOf(a) !== "UNKNOWN");
+              return withDisposition.length === 0 ? "—" : `${pool.filter((a) => a.signOff).length}/${withDisposition.length}`;
+            })()
+          }
+          label="Dispositions signed off"
+          sub={
+            (() => {
+              const stale = pool.filter((a) => a.signOff && a.signOff.disposition !== finalOf(a)).length;
+              return stale > 0 ? `${stale} stale — disposition changed since agreement` : "Client-agreed dispositions";
+            })()
+          }
+          tone={pool.some((a) => a.signOff && a.signOff.disposition !== finalOf(a)) ? "text-amber-600" : undefined}
         />
       </div>
 
