@@ -5,7 +5,7 @@ import { requireEngagementContext } from "@/lib/auth/context";
 import { validateHeatThresholds } from "@/lib/methodology";
 import { writeAudit } from "@/lib/audit";
 import { recomputeEngagement } from "@/lib/recompute";
-import { adminDb } from "@/lib/db/admin";
+import { adminDb, rateLimit } from "@/lib/db/admin";
 
 const step01 = (min: number, max: number) =>
   z
@@ -28,6 +28,12 @@ const schema = z.object({
 export async function updateThresholds(input: z.infer<typeof schema>) {
   const parsed = schema.parse(input);
   const { ctx, db, engagement } = await requireEngagementContext(parsed.engagementId, "ENGAGEMENT_LEAD");
+
+  // Each save triggers a full engagement recompute; throttle bursts (generous
+  // for interactive editing, but caps a save-spam recompute-DoS).
+  if (!(await rateLimit(`recompute:${ctx.membershipId}`, 30, 60)).allowed) {
+    throw new Error("Too many configuration changes in a short time — wait a moment and try again.");
+  }
 
   validateHeatThresholds({ t1: parsed.heatT1, t2: parsed.heatT2 });
 

@@ -22,7 +22,7 @@ export async function suggestMappingsAction(input: {
 
   if (!engagement.aiEnabled) return { ok: false, error: "AI features are switched off for this engagement (Settings → AI features)." };
   if (!aiConfigured()) return { ok: false, error: "AI is not configured on this platform — an administrator must set ANTHROPIC_API_KEY." };
-  const limit = await rateLimit(`ai:${ctx.engagementId}`, 20, 3600);
+  const limit = await rateLimit(`ai:${ctx.engagementId}`, 20, 3600, undefined, { failClosed: true });
   if (!limit.allowed) return { ok: false, error: "AI generation limit reached for this engagement (20/hour) — try again later." };
 
   try {
@@ -106,7 +106,7 @@ export async function runQualityChecksAction(input: {
 
   if (!engagement.aiEnabled) return { ok: false, error: "AI features are switched off for this engagement (Settings → AI features)." };
   if (!aiConfigured()) return { ok: false, error: "AI is not configured on this platform — an administrator must set ANTHROPIC_API_KEY." };
-  const limit = await rateLimit(`ai:${ctx.engagementId}`, 20, 3600);
+  const limit = await rateLimit(`ai:${ctx.engagementId}`, 20, 3600, undefined, { failClosed: true });
   if (!limit.allowed) return { ok: false, error: "AI generation limit reached for this engagement (20/hour) — try again later." };
 
   try {

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireEngagementContext } from "@/lib/auth/context";
 import { writeAudit } from "@/lib/audit";
 import { recomputeEngagement } from "@/lib/recompute";
+import { rateLimit } from "@/lib/db/admin";
 
 const schema = z.object({
   engagementId: z.string().min(1),
@@ -16,6 +17,11 @@ const schema = z.object({
 export async function updateWeightings(input: z.infer<typeof schema>) {
   const parsed = schema.parse(input);
   const { ctx, db, engagement } = await requireEngagementContext(parsed.engagementId, "ENGAGEMENT_LEAD");
+
+  // Each save triggers a full engagement recompute; throttle bursts.
+  if (!(await rateLimit(`recompute:${ctx.membershipId}`, 30, 60)).allowed) {
+    throw new Error("Too many configuration changes in a short time — wait a moment and try again.");
+  }
 
   // Scoped read — also proves every questionId belongs to this engagement.
   const existing = await db.questionWeighting.findMany({

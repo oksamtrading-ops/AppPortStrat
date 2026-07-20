@@ -268,6 +268,12 @@ describe("Collaboration C1: comment visibility and notification privacy", () => 
     expect(() => guardArgs("Notification", "findMany", {}, respondent)).toThrow(/cannot access/);
   });
 
+  it("denies Client Viewers reading AuditEvent (payloads carry emails/justifications)", () => {
+    expect(() => guardArgs("AuditEvent", "findMany", {}, viewer)).toThrow(/cannot access/);
+    // Consultants/leads still read it (their audit + activity pages).
+    expect(() => guardArgs("AuditEvent", "findMany", {}, lead)).not.toThrow();
+  });
+
   // ── C3: capability comments + disposition sign-off ──
 
   it("applies the viewer comment rules to capability comments too", () => {

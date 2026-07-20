@@ -35,7 +35,14 @@ export async function extractPortfolioAction(input: {
 
   if (!engagement.aiEnabled) return { ok: false, error: "AI features are switched off for this engagement (Settings → AI features)." };
   if (!aiConfigured()) return { ok: false, error: "AI is not configured on this platform — an administrator must set ANTHROPIC_API_KEY." };
-  const limit = await rateLimit(`ai:${ctx.engagementId}`, 20, 3600);
+  // Weight the charge by input size so a single large multimodal/long-text
+  // extraction can't buy a disproportionate amount of model spend for one unit;
+  // fail CLOSED so a DB brownout can't uncap Anthropic cost (money path).
+  const cost =
+    parsed.source.kind === "text"
+      ? Math.ceil(parsed.source.text.length / 250_000) // ~1–2 units for up to 500K chars
+      : 3; // image/PDF: multimodal is materially pricier per call
+  const limit = await rateLimit(`ai:${ctx.engagementId}`, 20, 3600, undefined, { failClosed: true, cost });
   if (!limit.allowed) return { ok: false, error: "AI generation limit reached for this engagement (20/hour) — try again later." };
 
   try {

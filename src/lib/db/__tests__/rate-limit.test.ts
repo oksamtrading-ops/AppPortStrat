@@ -32,4 +32,18 @@ describe.skipIf(!hasDb)("rateLimit (integration)", () => {
     // A later window resets the counter.
     expect((await rateLimit(key, 3, 60, now + 61_000)).allowed).toBe(true);
   }, 60_000);
+
+  it("charges `cost` units per call (size-weighting)", async () => {
+    const { rateLimit } = await import("../admin");
+    const { getRawPrisma } = await import("../prisma");
+    const key = `__test_cost_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+    const now = Date.now();
+    cleanup = async () => {
+      await getRawPrisma().$executeRawUnsafe(`DELETE FROM "RateLimitHit" WHERE "bucket" LIKE '${key}%'`);
+    };
+    // Limit 10; a cost-4 call then a cost-4 call = 8 (ok), third cost-4 = 12 (blocked).
+    expect((await rateLimit(key, 10, 60, now, { cost: 4 })).allowed).toBe(true); // 4
+    expect((await rateLimit(key, 10, 60, now, { cost: 4 })).allowed).toBe(true); // 8
+    expect((await rateLimit(key, 10, 60, now, { cost: 4 })).allowed).toBe(false); // 12 → blocked
+  }, 60_000);
 });

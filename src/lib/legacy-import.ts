@@ -54,8 +54,12 @@ const NEEDED_SHEETS = new Set([
 ]);
 
 // Decompression-bomb guards (security review). A 30 MB ZIP can inflate to
-// gigabytes; the ZIP central directory records each entry's uncompressed size,
-// so we budget BEFORE inflating anything.
+// gigabytes. The ZIP central directory records each entry's uncompressed size,
+// but that value is ATTACKER-CONTROLLED metadata — a crafted archive can
+// under-declare it. So the declared size is only a cheap fast-reject; the real
+// enforcement counts actual bytes DURING inflation (see inflateBounded) and
+// aborts the moment a per-entry or running-total budget is exceeded, so an
+// over-budget stream is never fully materialized.
 const MAX_TOTAL_UNCOMPRESSED = 300 * 1024 * 1024; // 300 MB across all entries
 const MAX_ENTRY_UNCOMPRESSED = 80 * 1024 * 1024; // 80 MB per entry
 
@@ -65,27 +69,76 @@ function uncompressedSize(file: unknown): number | null {
   return typeof data?.uncompressedSize === "number" ? data.uncompressedSize : null;
 }
 
+/** Minimal shape of the chunked stream JSZip's nodeStream returns. */
+interface ByteStream {
+  on(event: "data", cb: (chunk: Uint8Array) => void): ByteStream;
+  on(event: "error", cb: (err: unknown) => void): ByteStream;
+  on(event: "end", cb: () => void): ByteStream;
+  pause(): void;
+  resume(): void;
+}
+
+/**
+ * Inflate one entry, counting real bytes and aborting past `maxBytes` — so a
+ * lying central-directory size cannot get a multi-GB stream materialized. Also
+ * decrements a shared running-total budget across entries.
+ */
+function inflateBounded(
+  file: { nodeStream(type: "nodebuffer"): ByteStream },
+  name: string,
+  maxBytes: number,
+  budget: { remaining: number },
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Uint8Array[] = [];
+    let entryBytes = 0;
+    let aborted = false;
+    const stream = file.nodeStream("nodebuffer");
+    stream
+      .on("data", (chunk) => {
+        if (aborted) return;
+        entryBytes += chunk.length;
+        budget.remaining -= chunk.length;
+        if (entryBytes > maxBytes || budget.remaining < 0) {
+          aborted = true;
+          stream.pause();
+          reject(
+            new Error(
+              `Workbook part "${name}" is too large when decompressed — refusing to import (possible decompression bomb)`,
+            ),
+          );
+          return;
+        }
+        chunks.push(chunk);
+      })
+      .on("error", (err) => {
+        if (!aborted) reject(err instanceof Error ? err : new Error(String(err)));
+      })
+      .on("end", () => {
+        if (!aborted) resolve(Buffer.concat(chunks.map((c) => Buffer.from(c))).toString("utf8"));
+      });
+  });
+}
+
 async function loadLegacySheets(buffer: ArrayBuffer): Promise<Map<string, SheetCells>> {
   const { default: JSZip } = await import("jszip");
   const zip = await JSZip.loadAsync(buffer);
 
-  // Reject an archive whose declared uncompressed total is a decompression bomb.
-  let total = 0;
+  // Cheap fast-reject on DECLARED sizes (catches honest bombs before any
+  // inflation). Real enforcement is byte-counted during inflation below.
+  let declaredTotal = 0;
   for (const name of Object.keys(zip.files)) {
-    total += uncompressedSize(zip.files[name]) ?? 0;
+    declaredTotal += uncompressedSize(zip.files[name]) ?? 0;
   }
-  if (total > MAX_TOTAL_UNCOMPRESSED) {
+  if (declaredTotal > MAX_TOTAL_UNCOMPRESSED) {
     throw new Error("Workbook is too large when decompressed — refusing to import (possible decompression bomb)");
   }
 
+  const budget = { remaining: MAX_TOTAL_UNCOMPRESSED };
   const read = async (name: string): Promise<string | undefined> => {
     const file = zip.file(name);
     if (!file) return undefined;
-    const size = uncompressedSize(file);
-    if (size !== null && size > MAX_ENTRY_UNCOMPRESSED) {
-      throw new Error(`Workbook part "${name}" is too large when decompressed — refusing to import`);
-    }
-    return file.async("string");
+    return inflateBounded(file as unknown as { nodeStream(t: "nodebuffer"): ByteStream }, name, MAX_ENTRY_UNCOMPRESSED, budget);
   };
 
   // Sheet name → worksheet part path (workbook.xml + its rels).

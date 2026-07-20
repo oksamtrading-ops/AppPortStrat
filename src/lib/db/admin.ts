@@ -17,26 +17,37 @@ export function adminDb() {
 /**
  * Serverless-safe fixed-window rate limiter (security review: expensive paths
  * were unthrottled). Atomic INSERT ... ON CONFLICT increments the per-window
- * counter in one round-trip; no external Redis. Fails OPEN on any DB error so
- * a limiter hiccup never blocks legitimate traffic.
+ * counter in one round-trip; no external Redis.
+ *
+ * Failure policy on a DB error is the CALLER's choice (security review):
+ *  - default (failClosed:false) fails OPEN — a limiter hiccup never blocks
+ *    legitimate traffic on cheap/idempotent paths.
+ *  - failClosed:true DENIES on error — used for the money-spending AI path,
+ *    where a DB brownout (which also errors the limiter, since it shares the
+ *    connection pool) must NOT uncap Anthropic spend.
+ *
+ * `cost` charges more than one unit in a single call — used to weight a request
+ * by how expensive it is (e.g. a large AI input costs several units).
  */
 export async function rateLimit(
   key: string,
   limit: number,
   windowSeconds: number,
   now: number = Date.now(),
+  opts: { failClosed?: boolean; cost?: number } = {},
 ): Promise<{ allowed: boolean; count: number }> {
   const windowIndex = Math.floor(now / (windowSeconds * 1000));
   const bucket = `${key}:${windowIndex}`;
   const windowEnd = new Date((windowIndex + 1) * windowSeconds * 1000);
+  const cost = Math.max(1, Math.floor(opts.cost ?? 1));
   const db = getRawPrisma();
   try {
     const rows = await db.$queryRaw<Array<{ count: number }>>`
       INSERT INTO "RateLimitHit" ("bucket", "count", "windowEnd")
-      VALUES (${bucket}, 1, ${windowEnd})
-      ON CONFLICT ("bucket") DO UPDATE SET "count" = "RateLimitHit"."count" + 1
+      VALUES (${bucket}, ${cost}, ${windowEnd})
+      ON CONFLICT ("bucket") DO UPDATE SET "count" = "RateLimitHit"."count" + ${cost}
       RETURNING "count"`;
-    const count = rows[0]?.count ?? 1;
+    const count = rows[0]?.count ?? cost;
     // Opportunistic cleanup of expired buckets (~1% of calls) keeps the table
     // from accumulating stale rows without a scheduled job.
     if (Math.random() < 0.01) {
@@ -44,7 +55,8 @@ export async function rateLimit(
     }
     return { allowed: count <= limit, count };
   } catch {
-    return { allowed: true, count: 0 }; // fail open
+    // Fail open by default; fail closed for cost-sensitive callers.
+    return opts.failClosed ? { allowed: false, count: limit + 1 } : { allowed: true, count: 0 };
   }
 }
 

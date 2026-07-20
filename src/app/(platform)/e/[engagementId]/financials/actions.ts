@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireEngagementContext } from "@/lib/auth/context";
 import { writeAudit } from "@/lib/audit";
+import { rateLimit } from "@/lib/db/admin";
 
 /**
  * Fiscal-year cost dataset paste-import (the Financial Data sheet's role,
@@ -15,6 +16,9 @@ export async function importCostRecords(input: { engagementId: string; text: str
     .object({ engagementId: z.string().min(1), text: z.string().min(1).max(2_000_000) })
     .parse(input);
   const { ctx, db } = await requireEngagementContext(parsed.engagementId, "CONSULTANT");
+
+  const rl = await rateLimit(`import:${ctx.membershipId}`, 5, 60);
+  if (!rl.allowed) return { ok: false as const, error: "Too many imports — wait a minute and try again." };
 
   const { parseTsvWithHeader } = await import("@/lib/tabular");
   const { records } = parseTsvWithHeader(parsed.text, {

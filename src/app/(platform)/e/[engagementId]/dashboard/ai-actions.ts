@@ -33,7 +33,7 @@ export async function generateAiNarrative(input: {
   if (!aiConfigured()) {
     return { ok: false, error: "AI is not configured on this platform — an administrator must set ANTHROPIC_API_KEY." };
   }
-  const limit = await rateLimit(`ai:${ctx.engagementId}`, 20, 3600);
+  const limit = await rateLimit(`ai:${ctx.engagementId}`, 20, 3600, undefined, { failClosed: true });
   if (!limit.allowed) {
     return { ok: false, error: "AI generation limit reached for this engagement (20/hour) — try again later." };
   }
@@ -51,8 +51,11 @@ export async function generateAiNarrative(input: {
         : buildBriefPrompt(bundle);
     let text = await generateNarrative(prompt);
     // Deterministic grounding check: regenerate once on a miss; if it still
-    // fails, ship the draft with an explicit warning instead of silently.
+    // fails, ship the draft with an explicit warning instead of silently. The
+    // retry is a second model call, so charge it (best-effort — never block the
+    // in-flight generation on the limiter here).
     if (findUnverifiedNumbers(text, bundle).length > 0) {
+      await rateLimit(`ai:${ctx.engagementId}`, 20, 3600);
       text = await generateNarrative(prompt);
       const misses = findUnverifiedNumbers(text, bundle);
       if (misses.length > 0) {
@@ -86,10 +89,10 @@ export async function generateAiReport(input: {
 
   if (!engagement.aiEnabled) return { ok: false, error: "AI features are switched off for this engagement (Settings → AI features)." };
   if (!aiConfigured()) return { ok: false, error: "AI is not configured on this platform — an administrator must set ANTHROPIC_API_KEY." };
-  for (let i = 0; i < 3; i++) {
-    const limit = await rateLimit(`ai:${ctx.engagementId}`, 20, 3600);
-    if (!limit.allowed) return { ok: false, error: "AI generation limit reached for this engagement (20/hour) — try again later." };
-  }
+  // The report runs draft → critique → revise (~3 model calls); charge 3 in one
+  // atomic decrement, fail closed so a DB brownout can't uncap Anthropic spend.
+  const limit = await rateLimit(`ai:${ctx.engagementId}`, 20, 3600, undefined, { failClosed: true, cost: 3 });
+  if (!limit.allowed) return { ok: false, error: "AI generation limit reached for this engagement (20/hour) — try again later." };
 
   try {
     const data = await loadReportData(
@@ -131,7 +134,7 @@ export async function askPortfolioAction(input: {
 
   if (!engagement.aiEnabled) return { ok: false, error: "AI features are switched off for this engagement (Settings → AI features)." };
   if (!aiConfigured()) return { ok: false, error: "AI is not configured on this platform — an administrator must set ANTHROPIC_API_KEY." };
-  const limit = await rateLimit(`ai:${ctx.engagementId}`, 20, 3600);
+  const limit = await rateLimit(`ai:${ctx.engagementId}`, 20, 3600, undefined, { failClosed: true });
   if (!limit.allowed) return { ok: false, error: "AI generation limit reached for this engagement (20/hour) — try again later." };
 
   try {

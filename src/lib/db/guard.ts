@@ -38,8 +38,13 @@ const DENIED_MODELS = new Set([
   "CapabilityLibraryNode",
 ]);
 
-/** Team-internal models Client Viewers may not read (they are read-only everywhere else). */
-const VIEWER_DENIED_MODELS = new Set(["Task"]);
+/**
+ * Team-internal models Client Viewers may not read (they are read-only
+ * everywhere else). AuditEvent payloads carry member emails, override
+ * justifications, and weightings — no viewer surface queries it today, but
+ * denying it at the guard keeps a future viewer-facing query from leaking it.
+ */
+const VIEWER_DENIED_MODELS = new Set(["Task", "AuditEvent"]);
 
 /** Append-only models: reads + create only, for every role. */
 const APPEND_ONLY_MODELS = new Set(["AuditEvent"]);

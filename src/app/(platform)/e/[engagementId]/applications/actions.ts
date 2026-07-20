@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireEngagementContext } from "@/lib/auth/context";
 import { resolveFinalDisposition } from "@/lib/methodology";
 import { writeAudit } from "@/lib/audit";
+import { rateLimit } from "@/lib/db/admin";
 import { recomputeApplication } from "@/lib/recompute";
 import { createApplicationWithNumber } from "@/lib/db/applications";
 
@@ -149,6 +150,10 @@ export async function importApplications(input: { engagementId: string; text: st
     .parse(input);
   const { ctx, db, engagement } = await requireEngagementContext(parsed.engagementId, "CONSULTANT");
 
+  // Throttle: a paste import parses up to 2 MB and triggers a full recompute.
+  const rl = await rateLimit(`import:${ctx.membershipId}`, 5, 60);
+  if (!rl.allowed) return { ok: false as const, error: "Too many imports — wait a minute and try again." };
+
   const { parseTsvWithHeader, parseBooleanCell } = await import("@/lib/tabular");
   const { records, unknownColumns } = parseTsvWithHeader(parsed.text, {
     name: ["name", "applicationname", "application"],
@@ -235,6 +240,16 @@ export async function importLegacyWorkbook(formData: FormData) {
   if (file.size > 30 * 1024 * 1024) return { ok: false as const, error: "File exceeds the 30 MB limit" };
   if (!/\.(xlsx|xlsm)$/i.test(file.name)) return { ok: false as const, error: "Expected an .xlsx or .xlsm workbook" };
 
+  // Throttle the heavy parse+recompute (security review: was unthrottled).
+  const rl = await rateLimit(`import:${ctx.membershipId}`, 5, 60);
+  if (!rl.allowed) return { ok: false as const, error: "Too many imports — wait a minute and try again." };
+
+  // Reject a non-empty engagement BEFORE the expensive inflate+parse, not after
+  // (the parse cost was previously paid even when the apply would reject).
+  if ((await db.application.count()) > 0) {
+    return { ok: false as const, error: "Legacy import requires an empty engagement (no applications yet)." };
+  }
+
   const questionRefs = await db.surveyQuestion.findMany({
     select: { code: true, legacyRef: true, answerKind: true },
   });
@@ -245,7 +260,9 @@ export async function importLegacyWorkbook(formData: FormData) {
     const parsed = await parseLegacyWorkbook(await file.arrayBuffer(), questionRefs);
     summary = { ...(await applyLegacyImport(ctx, db, parsed)), warnings: parsed.warnings };
   } catch (err) {
-    return { ok: false as const, error: err instanceof Error ? err.message : "Import failed" };
+    // Curated messages only — never surface an internal error string.
+    const known = err instanceof Error && /empty engagement|decompression bomb|too large|valid \.xlsx|Sheet|workbook/i.test(err.message);
+    return { ok: false as const, error: known && err instanceof Error ? err.message : "Import failed — check the file is a valid APS v5.0 workbook." };
   }
 
   const { recomputeEngagement } = await import("@/lib/recompute");
