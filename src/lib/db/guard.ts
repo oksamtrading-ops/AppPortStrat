@@ -107,9 +107,9 @@ const RELATION_MAP: Record<string, Record<string, string>> = {
     questionWeightings: "QuestionWeighting", thresholdConfig: "ThresholdConfig", surveyAssignments: "SurveyAssignment",
     surveyResponses: "SurveyResponse", answers: "Answer", dispositionResults: "DispositionResult",
     dispositionOverrides: "DispositionOverride", costRecords: "CostRecord", optionLists: "OptionList",
-    optionItems: "OptionItem", auditEvents: "AuditEvent",
+    optionItems: "OptionItem", auditEvents: "AuditEvent", commentThreads: "Comment", notifications: "Notification",
   },
-  Membership: { engagement: "Engagement", assignments: "SurveyAssignment" },
+  Membership: { engagement: "Engagement", assignments: "SurveyAssignment", authoredComments: "Comment", notifications: "Notification" },
   BankTemplate: { questions: "BankQuestion" },
   BankQuestion: { template: "BankTemplate", anchors: "BankAnchor" },
   BankAnchor: { question: "BankQuestion" },
@@ -118,7 +118,7 @@ const RELATION_MAP: Record<string, Record<string, string>> = {
   GuidelineAnchor: { engagement: "Engagement", question: "SurveyQuestion" },
   QuestionWeighting: { engagement: "Engagement", question: "SurveyQuestion" },
   ThresholdConfig: { engagement: "Engagement" },
-  Application: { engagement: "Engagement", assignments: "SurveyAssignment", responses: "SurveyResponse", result: "DispositionResult", override: "DispositionOverride", costRecords: "CostRecord" },
+  Application: { engagement: "Engagement", assignments: "SurveyAssignment", responses: "SurveyResponse", result: "DispositionResult", override: "DispositionOverride", costRecords: "CostRecord", commentThreads: "Comment" },
   CapabilityNode: { engagement: "Engagement", parent: "CapabilityNode", children: "CapabilityNode" },
   SurveyAssignment: { engagement: "Engagement", application: "Application", template: "SurveyTemplate", membership: "Membership" },
   SurveyResponse: { engagement: "Engagement", application: "Application", template: "SurveyTemplate", answers: "Answer" },
@@ -129,6 +129,8 @@ const RELATION_MAP: Record<string, Record<string, string>> = {
   OptionList: { engagement: "Engagement", items: "OptionItem" },
   OptionItem: { engagement: "Engagement", list: "OptionList" },
   AuditEvent: { engagement: "Engagement" },
+  Comment: { engagement: "Engagement", application: "Application", author: "Membership", parent: "Comment", replies: "Comment" },
+  Notification: { engagement: "Engagement", recipient: "Membership" },
   EngagementTombstone: {},
   RateLimitHit: {},
   CapabilityLibrary: { nodes: "CapabilityLibraryNode" },
@@ -230,6 +232,39 @@ function withScope(where: unknown, scope: Record<string, unknown>): Record<strin
 }
 
 /**
+ * Includes/selects are NOT predicate-scoped (security review F2), so models
+ * whose visibility depends on a ROW-level rule must be queried top-level:
+ *  - Notification: own-recipient rows only — never traversable, any role.
+ *  - Comment: Client Viewers see internal:false only — not traversable by them.
+ */
+function assertRestrictedRelations(model: string, node: Record<string, unknown> | undefined, ctx: GuardContext): void {
+  if (!node) return;
+  const check = (field: string, value: unknown) => {
+    const target = RELATION_MAP[model]?.[field];
+    if (!target) return; // unknown fields are scalars or caught elsewhere
+    if (target === "Notification") {
+      throw new TenancyViolationError(`Notifications cannot be traversed via ${model}.${field} — query them top-level`);
+    }
+    if (target === "Comment" && ctx.role === "CLIENT_VIEWER") {
+      throw new TenancyViolationError(`Client Viewers cannot traverse ${model}.${field} — query comments top-level`);
+    }
+    if (value !== null && typeof value === "object") {
+      assertRestrictedRelations(target, value as Record<string, unknown>, ctx);
+    }
+  };
+  const include = node.include as Record<string, unknown> | undefined;
+  for (const [field, value] of Object.entries(include ?? {})) {
+    if (value === false) continue;
+    check(field, value);
+  }
+  const select = node.select as Record<string, unknown> | undefined;
+  for (const [field, value] of Object.entries(select ?? {})) {
+    if (field === "_count") continue;
+    if (value !== null && typeof value === "object") check(field, value);
+  }
+}
+
+/**
  * Validate and rewrite Prisma args so every operation is confined to
  * ctx.engagementId (and, for Client Respondents, to their assigned
  * applications). Throws TenancyViolationError on anything suspicious.
@@ -274,12 +309,22 @@ export function guardArgs(model: string, operation: string, rawArgs: unknown, ct
     // that each targets a readable model (security review F2).
     assertRespondentRelations(model, rawArgs as Record<string, unknown> | undefined);
   }
+  assertRestrictedRelations(model, rawArgs as Record<string, unknown> | undefined, ctx);
 
   const args: Record<string, unknown> = structuredClone(rawArgs ?? {}) as Record<string, unknown>;
   assertNoForeignEngagement(args, ctx.engagementId, "args");
 
   const scope: Record<string, unknown> = { engagementId: ctx.engagementId };
-  const predicate = ctx.role === "CLIENT_RESPONDENT" ? respondentPredicate(model, ctx.membershipId) : null;
+  let predicate = ctx.role === "CLIENT_RESPONDENT" ? respondentPredicate(model, ctx.membershipId) : null;
+  // Row-level collaboration rules (injected into WHERE, never into creates):
+  // notifications are personal — every role sees only its own; Client Viewers
+  // see only shared (internal:false) comments.
+  if (model === "Notification") {
+    predicate = { ...(predicate ?? {}), recipientMembershipId: ctx.membershipId };
+  }
+  if (model === "Comment" && ctx.role === "CLIENT_VIEWER") {
+    predicate = { ...(predicate ?? {}), internal: false };
+  }
 
   // Inject the tenancy scope (and respondent predicate) into the where clause.
   if (UNIQUE_WHERE_OPS.has(operation)) {

@@ -69,6 +69,7 @@ export default async function ApplicationsPage({
         result: true,
         override: true,
         responses: { select: { status: true } },
+        _count: { select: { commentThreads: true } },
       },
     }),
     db.thresholdConfig.findFirst(),
@@ -269,6 +270,14 @@ export default async function ApplicationsPage({
                       ) : (
                         <span className="font-medium">{app.name}</span>
                       )}
+                      {canEdit && app._count.commentThreads > 0 ? (
+                        <span
+                          className="text-muted-foreground ml-1.5 text-xs tabular-nums"
+                          title={`${app._count.commentThreads} comment(s)`}
+                        >
+                          💬{app._count.commentThreads}
+                        </span>
+                      ) : null}
                       <div className="text-muted-foreground text-xs">
                         {app.acronym}
                         {app.missionCritical ? (app.acronym ? " · " : "") + "Mission critical" : ""}

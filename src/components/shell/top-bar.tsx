@@ -4,6 +4,7 @@ import type { Session } from "@/lib/auth/session";
 import { devSignOut, switchDevUser } from "@/lib/auth/dev-actions";
 import { DEV_USERS } from "@/lib/auth/dev";
 import { Badge } from "@/components/ui/badge";
+import { NotificationBell, type NotificationView } from "./notification-bell";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -16,11 +17,13 @@ export function TopBar({
   subtitle,
   roleLabel,
   readOnlyLabel,
+  notifications,
 }: {
   session: Session;
   subtitle?: string;
   roleLabel?: string;
   readOnlyLabel?: string;
+  notifications?: { engagementId: string; unread: number; items: NotificationView[] };
 }) {
   return (
     <header className="flex h-12 items-center justify-between border-b bg-background px-4">
@@ -36,6 +39,9 @@ export function TopBar({
         ) : null}
       </div>
       <div className="flex items-center gap-3">
+        {notifications ? (
+          <NotificationBell engagementId={notifications.engagementId} unread={notifications.unread} items={notifications.items} />
+        ) : null}
         {readOnlyLabel ? (
           <Badge variant="secondary" className="shrink-0">
             {readOnlyLabel}

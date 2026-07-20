@@ -26,6 +26,13 @@ export default async function EngagementLayout({
   ]);
   const sidebarCollapsed = cookieStore.get(SIDEBAR_COOKIE)?.value === "1";
 
+  // Bell data: own notifications only (guard-enforced); respondents have none.
+  const db = (await import("@/lib/db/scoped")).getScopedDb(ctx);
+  const notifications =
+    ctx.role === "CLIENT_RESPONDENT"
+      ? null
+      : await db.notification.findMany({ orderBy: { createdAt: "desc" }, take: 15 });
+
   return (
     <div className="flex min-h-screen flex-col">
       <TopBar
@@ -33,6 +40,27 @@ export default async function EngagementLayout({
         subtitle={`${engagement.name} — ${engagement.clientName}`}
         roleLabel={ROLE_LABELS[ctx.role]}
         readOnlyLabel={ctx.readOnly ? `Read-only (${engagement.status.toLowerCase()})` : undefined}
+        notifications={
+          notifications
+            ? {
+                engagementId,
+                unread: notifications.filter((n) => !n.readAt).length,
+                items: notifications.map((n) => {
+                  const p = n.payload as { applicationId?: string; applicationName?: string; actorDisplay?: string; snippet?: string };
+                  return {
+                    id: n.id,
+                    kind: n.kind,
+                    applicationId: p.applicationId ?? "",
+                    applicationName: p.applicationName ?? "an application",
+                    actorDisplay: p.actorDisplay ?? "Someone",
+                    snippet: p.snippet ?? "",
+                    createdAt: n.createdAt.toISOString().slice(0, 16).replace("T", " "),
+                    unread: !n.readAt,
+                  };
+                }),
+              }
+            : undefined
+        }
       />
       <div className="flex flex-1">
         <SidebarNav engagementId={engagementId} role={ctx.role} defaultCollapsed={sidebarCollapsed} />

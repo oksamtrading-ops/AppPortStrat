@@ -57,7 +57,7 @@ BEGIN
     'GuidelineAnchor', 'QuestionWeighting', 'ThresholdConfig',
     'SurveyAssignment', 'SurveyResponse', 'Answer',
     'DispositionResult', 'DispositionOverride', 'CostRecord',
-    'OptionList', 'OptionItem', 'AuditEvent'
+    'OptionList', 'OptionItem', 'AuditEvent', 'Comment', 'Notification'
   ]
   LOOP
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
@@ -85,7 +85,7 @@ DECLARE
   tables text[] := ARRAY[
     'Application','CapabilityNode','SurveyTemplate','SurveyQuestion','GuidelineAnchor',
     'QuestionWeighting','ThresholdConfig','SurveyAssignment','SurveyResponse','Answer',
-    'DispositionResult','DispositionOverride','CostRecord','OptionList','OptionItem','AuditEvent'
+    'DispositionResult','DispositionOverride','CostRecord','OptionList','OptionItem','AuditEvent','Comment','Notification'
   ];
   unprotected int;
   bypasses boolean;

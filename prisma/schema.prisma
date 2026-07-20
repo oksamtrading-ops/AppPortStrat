@@ -135,6 +135,8 @@ model Engagement {
   optionLists        OptionList[]
   optionItems        OptionItem[]
   auditEvents        AuditEvent[]
+  commentThreads     Comment[]
+  notifications      Notification[]
 }
 
 model Membership {
@@ -147,6 +149,8 @@ model Membership {
 
   engagement  Engagement         @relation(fields: [engagementId], references: [id], onDelete: Cascade)
   assignments SurveyAssignment[]
+  authoredComments Comment[]
+  notifications    Notification[]
 
   @@unique([id, engagementId])
   @@unique([engagementId, email])
@@ -320,6 +324,7 @@ model Application {
   result      DispositionResult?
   override    DispositionOverride?
   costRecords CostRecord[]
+  commentThreads Comment[]
 
   @@unique([id, engagementId])
   @@unique([engagementId, appNumber])
@@ -535,6 +540,46 @@ model AuditEvent {
 /// Survives engagement deletion by design: NO foreign keys, admin door only
 /// (the tenancy guard denies it entirely). The permanent record that a purge
 /// happened, who ran it, and how much data it removed.
+// ───────────────────────── Collaboration (C1) ─────────────────────────
+
+model Comment {
+  id                 String    @id @default(cuid())
+  engagementId       String
+  applicationId      String
+  authorMembershipId String
+  parentId           String? // one-level threads: replies reference the root comment
+  body               String
+  /// Deloitte-internal (default) vs shared — Client Viewers see ONLY internal:false.
+  internal           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+
+  engagement  Engagement  @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  author      Membership  @relation(fields: [authorMembershipId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  parent      Comment?    @relation("CommentThread", fields: [parentId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  replies     Comment[]   @relation("CommentThread")
+
+  @@unique([id, engagementId])
+  @@index([engagementId, applicationId])
+}
+
+model Notification {
+  id                    String    @id @default(cuid())
+  engagementId          String
+  recipientMembershipId String
+  kind                  String // "mention" | "reply"
+  /// { applicationId, applicationName, actorDisplay, snippet }
+  payload               Json
+  readAt                DateTime?
+  createdAt             DateTime  @default(now())
+
+  engagement Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  recipient  Membership @relation(fields: [recipientMembershipId, engagementId], references: [id, engagementId], onDelete: Cascade)
+
+  @@unique([id, engagementId])
+  @@index([engagementId, recipientMembershipId, readAt])
+}
+
 model EngagementTombstone {
   id               String   @id @default(cuid())
   engagementId     String

@@ -226,3 +226,45 @@ describe("F2: respondent include/select cannot traverse into denied models", () 
     expect(() => guardArgs("Application", "findMany", { include: { result: true, costRecords: true } }, consultant)).not.toThrow();
   });
 });
+
+describe("Collaboration C1: comment visibility and notification privacy", () => {
+  const base = { engagementId: "eng1", membershipId: "mem1", readOnly: false } as const;
+  const lead = { ...base, role: "ENGAGEMENT_LEAD" as const };
+  const viewer = { ...base, role: "CLIENT_VIEWER" as const };
+  const respondent = { ...base, role: "CLIENT_RESPONDENT" as const };
+
+  it("injects internal:false for Client Viewer comment reads; not for leads", () => {
+    const v = guardArgs("Comment", "findMany", { where: { applicationId: "a1" } }, viewer);
+    expect(JSON.stringify(v.where)).toContain('"internal":false');
+    const l = guardArgs("Comment", "findMany", { where: { applicationId: "a1" } }, lead);
+    expect(JSON.stringify(l.where)).not.toContain('"internal"');
+  });
+
+  it("restricts Notification reads/updates to the caller's own rows, any role", () => {
+    for (const ctx of [lead, viewer]) {
+      const r = guardArgs("Notification", "findMany", {}, ctx);
+      expect(JSON.stringify(r.where)).toContain('"recipientMembershipId":"mem1"');
+    }
+    const u = guardArgs("Notification", "updateMany", { where: { readAt: null }, data: { readAt: new Date() } }, lead);
+    expect(JSON.stringify(u.where)).toContain('"recipientMembershipId":"mem1"');
+  });
+
+  it("allows creating notifications FOR OTHER members (mentions)", () => {
+    const c = guardArgs("Notification", "createMany", { data: [{ recipientMembershipId: "mem2", kind: "mention", payload: {} }] }, lead);
+    expect(JSON.stringify(c.data)).toContain('"recipientMembershipId":"mem2"');
+  });
+
+  it("denies traversal into Notification for everyone, and into Comment for viewers", () => {
+    expect(() => guardArgs("Membership", "findMany", { include: { notifications: true } }, lead)).toThrow(/top-level/);
+    expect(() => guardArgs("Application", "findMany", { include: { commentThreads: true } }, viewer)).toThrow(/top-level/);
+    // Leads may traverse comments (no row rule applies to them).
+    expect(() => guardArgs("Application", "findMany", { include: { commentThreads: true } }, lead)).not.toThrow();
+    // _count stays allowed for viewers (aggregate only, no row data).
+    expect(() => guardArgs("Application", "findMany", { select: { name: true, _count: { select: { commentThreads: true } } } }, viewer)).not.toThrow();
+  });
+
+  it("denies respondents any comment/notification access", () => {
+    expect(() => guardArgs("Comment", "findMany", {}, respondent)).toThrow(/cannot access/);
+    expect(() => guardArgs("Notification", "findMany", {}, respondent)).toThrow(/cannot access/);
+  });
+});
