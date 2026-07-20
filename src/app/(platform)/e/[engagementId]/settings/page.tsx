@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateEngagementSettings } from "./actions";
+import { updateAiEnabled, updateEngagementSettings } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +61,31 @@ export default async function EngagementSettingsPage({ params }: { params: Promi
               <div className="md:col-span-2">
                 <Button type="submit">Save details</Button>
               </div>
+            )}
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">AI features</CardTitle>
+          <CardDescription>
+            Opt-in per engagement. When enabled, this engagement&apos;s computed figures (never raw survey text) are
+            sent to the Claude API to generate narratives — confirm the engagement letter permits it. All
+            generations are rate-limited and audited.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={updateAiEnabled} className="flex items-center gap-3">
+            <input type="hidden" name="engagementId" value={engagementId} />
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="aiEnabled" defaultChecked={engagement.aiEnabled} disabled={readOnly} />
+              Enable AI narratives (dashboard explanation, engagement brief)
+            </label>
+            {readOnly ? null : (
+              <Button type="submit" size="sm" variant="outline">
+                Save
+              </Button>
             )}
           </form>
         </CardContent>

@@ -109,6 +109,7 @@ model Engagement {
   status                EngagementStatus @default(ACTIVE)
   currency              String           @default("USD")
   fiscalYearConvention  String           @default("FY")
+  aiEnabled             Boolean @default(false) // per-engagement opt-in: client data may be sent to the Claude API
   strictWorkbookScoring Boolean          @default(false) // quirk #3 escape hatch
   splitHeatmapYellow    Boolean          @default(false) // APP-SPEC §4.9 toggle
   dispositionLabels     Json? // per-engagement display-label overrides (quirk #10)

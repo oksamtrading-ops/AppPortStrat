@@ -16,6 +16,7 @@
     "db:sync-bank": "tsx prisma/sync-bank.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.3",
     "@clerk/nextjs": "^7.5.20",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",

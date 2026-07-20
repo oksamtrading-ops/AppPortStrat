@@ -61,3 +61,21 @@ export async function updateEngagementSettings(formData: FormData) {
   });
   revalidatePath(`/e/${ctx.engagementId}/settings`);
 }
+
+/** Per-engagement AI opt-in (v1 platform decision: key is platform-level). */
+export async function updateAiEnabled(formData: FormData) {
+  const engagementId = z.string().min(1).parse(formData.get("engagementId"));
+  const enabled = formData.get("aiEnabled") === "on";
+  const { ctx, db, engagement } = await requireEngagementContext(engagementId, "ENGAGEMENT_LEAD");
+  if (engagement.aiEnabled === enabled) return;
+
+  await adminDb().engagement.update({ where: { id: ctx.engagementId }, data: { aiEnabled: enabled } });
+  await writeAudit(db, ctx, {
+    action: "engagement.aiToggle",
+    entityType: "Engagement",
+    entityId: ctx.engagementId,
+    before: { aiEnabled: engagement.aiEnabled },
+    after: { aiEnabled: enabled },
+  });
+  revalidatePath(`/e/${ctx.engagementId}/settings`);
+}

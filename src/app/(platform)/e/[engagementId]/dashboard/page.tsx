@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pill } from "@/components/ui/pill";
 import { BucketBars, CHART_COLORS, DonutChart } from "@/components/dashboard/charts";
 import { MatrixView, type MatrixApp } from "@/components/apps/matrix-view";
+import { AiPanel } from "@/components/dashboard/ai-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -147,6 +148,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
           </div>
         ) : null}
       </div>
+
+      {engagement.aiEnabled && (ctx.role === "ENGAGEMENT_LEAD" || ctx.role === "CONSULTANT") ? (
+        <AiPanel engagementId={engagementId} />
+      ) : null}
 
       {/* Executive summary strip */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
