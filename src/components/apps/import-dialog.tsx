@@ -14,8 +14,19 @@ import {
 } from "@/components/ui/dialog";
 import { importApplications } from "@/app/(platform)/e/[engagementId]/applications/actions";
 
-export function ImportApplicationsDialog({ engagementId }: { engagementId: string }) {
-  const [open, setOpen] = useState(false);
+export function ImportApplicationsDialog({
+  engagementId,
+  open: openProp,
+  onOpenChange,
+}: {
+  engagementId: string;
+  /** Controlled mode (e.g. opened from a menu item) — the trigger button is omitted. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = openProp ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
   const [text, setText] = useState("");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -43,9 +54,11 @@ export function ImportApplicationsDialog({ engagementId }: { engagementId: strin
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Import</Button>
-      </DialogTrigger>
+      {openProp === undefined ? (
+        <DialogTrigger asChild>
+          <Button variant="outline">Import</Button>
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Import applications from Excel</DialogTitle>

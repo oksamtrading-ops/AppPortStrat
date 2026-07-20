@@ -18,9 +18,8 @@ import {
 } from "@/components/ui/table";
 import { OverrideEditor } from "./override-editor";
 import { FlagToggles } from "@/components/apps/flag-toggles";
-import { ImportApplicationsDialog } from "@/components/apps/import-dialog";
 import { AiImportDialog } from "@/components/apps/ai-import-dialog";
-import { LegacyImportDialog } from "@/components/apps/legacy-import-dialog";
+import { PortfolioToolbar } from "@/components/apps/portfolio-toolbar";
 import { MatrixView, type MatrixApp } from "@/components/apps/matrix-view";
 import { deleteApplication } from "./actions";
 
@@ -173,18 +172,7 @@ export default async function ApplicationsPage({
           </div>
           {canEdit ? (
             <>
-              <Button asChild variant="outline">
-                <a href={`/e/${engagementId}/applications/export`} download>
-                  Export CSV
-                </a>
-              </Button>
-              <Button asChild variant="outline">
-                <a href={`/e/${engagementId}/export`} download>
-                  Export XLSX
-                </a>
-              </Button>
-              {all.length === 0 && isLead ? <LegacyImportDialog engagementId={engagementId} /> : null}
-              <ImportApplicationsDialog engagementId={engagementId} />
+              <PortfolioToolbar engagementId={engagementId} showLegacy={all.length === 0 && isLead} />
               {engagement.aiEnabled ? <AiImportDialog engagementId={engagementId} /> : null}
               <Button asChild>
                 <Link href={`/e/${engagementId}/applications/new`}>+ Add</Link>

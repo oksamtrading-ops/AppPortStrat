@@ -14,8 +14,19 @@ import {
 } from "@/components/ui/dialog";
 import { importLegacyWorkbook } from "@/app/(platform)/e/[engagementId]/applications/actions";
 
-export function LegacyImportDialog({ engagementId }: { engagementId: string }) {
-  const [open, setOpen] = useState(false);
+export function LegacyImportDialog({
+  engagementId,
+  open: openProp,
+  onOpenChange,
+}: {
+  engagementId: string;
+  /** Controlled mode (e.g. opened from a menu item) — the trigger button is omitted. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = openProp ?? internalOpen;
+  const setOpen = onOpenChange ?? setInternalOpen;
   const [isPending, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -47,9 +58,11 @@ export function LegacyImportDialog({ engagementId }: { engagementId: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Import legacy workbook</Button>
-      </DialogTrigger>
+      {openProp === undefined ? (
+        <DialogTrigger asChild>
+          <Button variant="outline">Import legacy workbook</Button>
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>Import an APS v5.0 workbook</DialogTitle>
