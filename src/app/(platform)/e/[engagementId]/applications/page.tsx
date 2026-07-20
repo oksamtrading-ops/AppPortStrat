@@ -19,6 +19,7 @@ import {
 import { OverrideEditor } from "./override-editor";
 import { FlagToggles } from "@/components/apps/flag-toggles";
 import { ImportApplicationsDialog } from "@/components/apps/import-dialog";
+import { AiImportDialog } from "@/components/apps/ai-import-dialog";
 import { LegacyImportDialog } from "@/components/apps/legacy-import-dialog";
 import { MatrixView, type MatrixApp } from "@/components/apps/matrix-view";
 import { deleteApplication } from "./actions";
@@ -59,7 +60,7 @@ export default async function ApplicationsPage({
 }) {
   const { engagementId } = await params;
   const filters = await searchParams;
-  const { ctx, db } = await requireEngagementContext(engagementId);
+  const { ctx, db, engagement } = await requireEngagementContext(engagementId);
   if (ctx.role === "CLIENT_RESPONDENT") redirect(`/e/${engagementId}/surveys`);
 
   const [all, thresholds] = await Promise.all([
@@ -184,6 +185,7 @@ export default async function ApplicationsPage({
               </Button>
               {all.length === 0 && isLead ? <LegacyImportDialog engagementId={engagementId} /> : null}
               <ImportApplicationsDialog engagementId={engagementId} />
+              {engagement.aiEnabled ? <AiImportDialog engagementId={engagementId} /> : null}
               <Button asChild>
                 <Link href={`/e/${engagementId}/applications/new`}>+ Add</Link>
               </Button>

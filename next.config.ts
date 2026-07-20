@@ -10,6 +10,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // AI import uploads (diagram images / PDFs) travel through a server action.
+  experimental: { serverActions: { bodySizeLimit: "16mb" } },
   // A stray lockfile in the home directory makes Next infer the wrong
   // workspace root; pin it to this project.
   turbopack: { root: __dirname },

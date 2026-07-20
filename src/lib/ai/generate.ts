@@ -20,7 +20,6 @@ export async function generateNarrative(prompt: { system: string; user: string }
   const response = await client.messages.create({
     model: process.env.APS_AI_MODEL ?? "claude-sonnet-5",
     max_tokens: MAX_OUTPUT_TOKENS,
-    temperature: 0.4, // consistent consulting output across regenerations
     system: prompt.system,
     messages: [{ role: "user", content: prompt.user }],
   });
