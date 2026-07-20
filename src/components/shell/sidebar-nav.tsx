@@ -14,6 +14,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ScrollText,
+  Settings,
   ShieldCheck,
   SlidersHorizontal,
   Users,
@@ -44,6 +45,7 @@ function navItems(engagementId: string): NavItem[] {
     { href: `${base}/financials`, label: "Financials", icon: CircleDollarSign, roles: ["ENGAGEMENT_LEAD", "CONSULTANT", "CLIENT_VIEWER"] },
     { href: `${base}/members`, label: "Members", icon: Users, roles: ["ENGAGEMENT_LEAD", "CONSULTANT"] },
     { href: `${base}/quality`, label: "Data quality", icon: ShieldCheck, roles: ["ENGAGEMENT_LEAD", "CONSULTANT"] },
+    { href: `${base}/settings`, label: "Settings", icon: Settings, roles: ["ENGAGEMENT_LEAD"] },
     { href: `${base}/config/weightings`, label: "Weightings", icon: SlidersHorizontal, roles: ["ENGAGEMENT_LEAD"] },
     { href: `${base}/config/thresholds`, label: "Thresholds", icon: Gauge, roles: ["ENGAGEMENT_LEAD"] },
     { href: `${base}/config/options`, label: "Option lists", icon: ListChecks, roles: ["ENGAGEMENT_LEAD"] },
@@ -63,7 +65,7 @@ export function SidebarNav({
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const items = navItems(engagementId).filter((item) => item.roles.includes(role));
-  const configStart = items.findIndex((i) => i.label === "Weightings");
+  const configStart = items.findIndex((i) => i.label === "Settings");
 
   function toggle() {
     const next = !collapsed;
