@@ -38,6 +38,9 @@ const DENIED_MODELS = new Set([
   "CapabilityLibraryNode",
 ]);
 
+/** Team-internal models Client Viewers may not read (they are read-only everywhere else). */
+const VIEWER_DENIED_MODELS = new Set(["Task"]);
+
 /** Append-only models: reads + create only, for every role. */
 const APPEND_ONLY_MODELS = new Set(["AuditEvent"]);
 
@@ -107,9 +110,9 @@ const RELATION_MAP: Record<string, Record<string, string>> = {
     questionWeightings: "QuestionWeighting", thresholdConfig: "ThresholdConfig", surveyAssignments: "SurveyAssignment",
     surveyResponses: "SurveyResponse", answers: "Answer", dispositionResults: "DispositionResult",
     dispositionOverrides: "DispositionOverride", costRecords: "CostRecord", optionLists: "OptionList",
-    optionItems: "OptionItem", auditEvents: "AuditEvent", commentThreads: "Comment", notifications: "Notification",
+    optionItems: "OptionItem", auditEvents: "AuditEvent", commentThreads: "Comment", notifications: "Notification", tasks: "Task",
   },
-  Membership: { engagement: "Engagement", assignments: "SurveyAssignment", authoredComments: "Comment", notifications: "Notification" },
+  Membership: { engagement: "Engagement", assignments: "SurveyAssignment", authoredComments: "Comment", notifications: "Notification", assignedTasks: "Task", createdTasks: "Task" },
   BankTemplate: { questions: "BankQuestion" },
   BankQuestion: { template: "BankTemplate", anchors: "BankAnchor" },
   BankAnchor: { question: "BankQuestion" },
@@ -118,7 +121,7 @@ const RELATION_MAP: Record<string, Record<string, string>> = {
   GuidelineAnchor: { engagement: "Engagement", question: "SurveyQuestion" },
   QuestionWeighting: { engagement: "Engagement", question: "SurveyQuestion" },
   ThresholdConfig: { engagement: "Engagement" },
-  Application: { engagement: "Engagement", assignments: "SurveyAssignment", responses: "SurveyResponse", result: "DispositionResult", override: "DispositionOverride", costRecords: "CostRecord", commentThreads: "Comment" },
+  Application: { engagement: "Engagement", assignments: "SurveyAssignment", responses: "SurveyResponse", result: "DispositionResult", override: "DispositionOverride", costRecords: "CostRecord", commentThreads: "Comment", tasks: "Task" },
   CapabilityNode: { engagement: "Engagement", parent: "CapabilityNode", children: "CapabilityNode" },
   SurveyAssignment: { engagement: "Engagement", application: "Application", template: "SurveyTemplate", membership: "Membership" },
   SurveyResponse: { engagement: "Engagement", application: "Application", template: "SurveyTemplate", answers: "Answer" },
@@ -131,6 +134,7 @@ const RELATION_MAP: Record<string, Record<string, string>> = {
   AuditEvent: { engagement: "Engagement" },
   Comment: { engagement: "Engagement", application: "Application", author: "Membership", parent: "Comment", replies: "Comment" },
   Notification: { engagement: "Engagement", recipient: "Membership" },
+  Task: { engagement: "Engagement", application: "Application", assignee: "Membership", createdBy: "Membership" },
   EngagementTombstone: {},
   RateLimitHit: {},
   CapabilityLibrary: { nodes: "CapabilityLibraryNode" },
@@ -248,6 +252,9 @@ function assertRestrictedRelations(model: string, node: Record<string, unknown> 
     if (target === "Comment" && ctx.role === "CLIENT_VIEWER") {
       throw new TenancyViolationError(`Client Viewers cannot traverse ${model}.${field} — query comments top-level`);
     }
+    if (target === "Task" && ctx.role === "CLIENT_VIEWER") {
+      throw new TenancyViolationError(`Client Viewers cannot access tasks (via ${model}.${field})`);
+    }
     if (value !== null && typeof value === "object") {
       assertRestrictedRelations(target, value as Record<string, unknown>, ctx);
     }
@@ -292,6 +299,9 @@ export function guardArgs(model: string, operation: string, rawArgs: unknown, ct
     if (ctx.role === "CLIENT_VIEWER") {
       throw new TenancyViolationError("Client Viewers have read-only access");
     }
+  }
+  if (ctx.role === "CLIENT_VIEWER" && VIEWER_DENIED_MODELS.has(model)) {
+    throw new TenancyViolationError(`Client Viewers cannot access ${model}`);
   }
 
   if (ctx.role === "CLIENT_RESPONDENT") {

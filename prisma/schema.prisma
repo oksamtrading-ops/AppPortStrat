@@ -93,6 +93,11 @@ enum MeetsFutureState {
   PARTIAL
 }
 
+enum TaskStatus {
+  OPEN
+  DONE
+}
+
 enum CostVersionType {
   ACTUAL
   BUDGET
@@ -137,6 +142,7 @@ model Engagement {
   auditEvents        AuditEvent[]
   commentThreads     Comment[]
   notifications      Notification[]
+  tasks              Task[]
 }
 
 model Membership {
@@ -151,6 +157,8 @@ model Membership {
   assignments SurveyAssignment[]
   authoredComments Comment[]
   notifications    Notification[]
+  assignedTasks    Task[] @relation("TaskAssignee")
+  createdTasks     Task[] @relation("TaskCreator")
 
   @@unique([id, engagementId])
   @@unique([engagementId, email])
@@ -325,6 +333,7 @@ model Application {
   override    DispositionOverride?
   costRecords CostRecord[]
   commentThreads Comment[]
+  tasks          Task[]
 
   @@unique([id, engagementId])
   @@unique([engagementId, appNumber])
@@ -541,6 +550,28 @@ model AuditEvent {
 /// (the tenancy guard denies it entirely). The permanent record that a purge
 /// happened, who ran it, and how much data it removed.
 // ───────────────────────── Collaboration (C1) ─────────────────────────
+
+model Task {
+  id                   String    @id @default(cuid())
+  engagementId         String
+  applicationId        String? // optional link to an application
+  title                String
+  assigneeMembershipId String?
+  createdByMembershipId String
+  dueDate              DateTime?
+  status               TaskStatus @default(OPEN)
+  createdAt            DateTime  @default(now())
+  completedAt          DateTime?
+
+  engagement  Engagement   @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  application Application? @relation(fields: [applicationId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  assignee    Membership?  @relation("TaskAssignee", fields: [assigneeMembershipId, engagementId], references: [id, engagementId], onDelete: SetNull)
+  createdBy   Membership   @relation("TaskCreator", fields: [createdByMembershipId, engagementId], references: [id, engagementId], onDelete: Cascade)
+
+  @@unique([id, engagementId])
+  @@index([engagementId, assigneeMembershipId, status])
+  @@index([engagementId, applicationId])
+}
 
 model Comment {
   id                 String    @id @default(cuid())

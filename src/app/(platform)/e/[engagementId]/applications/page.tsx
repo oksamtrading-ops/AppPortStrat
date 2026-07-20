@@ -268,7 +268,9 @@ export default async function ApplicationsPage({
                           {app.name}
                         </Link>
                       ) : (
-                        <span className="font-medium">{app.name}</span>
+                        <Link href={`/e/${engagementId}/applications/${app.id}/view`} className="font-medium hover:underline">
+                          {app.name}
+                        </Link>
                       )}
                       {canEdit && app._count.commentThreads > 0 ? (
                         <span

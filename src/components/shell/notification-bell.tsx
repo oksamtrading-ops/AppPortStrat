@@ -58,14 +58,15 @@ export function NotificationBell({
             items.map((n) => (
               <Link
                 key={n.id}
-                href={`/e/${engagementId}/applications/${n.applicationId}/edit`}
+                href={n.applicationId ? `/e/${engagementId}/applications/${n.applicationId}/edit` : `/e/${engagementId}/tasks`}
                 onClick={() => setOpen(false)}
                 className={`hover:bg-accent block rounded px-3 py-2 text-sm ${n.unread ? "bg-secondary/60" : ""}`}
               >
                 <div className="text-xs">
                   <span className="font-medium">{n.actorDisplay}</span>{" "}
                   <span className="text-muted-foreground">
-                    {n.kind === "mention" ? "mentioned you on" : "replied on"} {n.applicationName} · {n.createdAt}
+                    {n.kind === "mention" ? "mentioned you on" : n.kind === "reply" ? "replied on" : "assigned you a task on"}{" "}
+                    {n.applicationName} · {n.createdAt}
                   </span>
                 </div>
                 <p className="text-muted-foreground mt-0.5 truncate text-xs">{n.snippet}</p>
