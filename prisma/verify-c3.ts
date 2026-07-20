@@ -7,6 +7,8 @@ import { adminDb } from "../src/lib/db/admin";
 import { getScopedDb } from "../src/lib/db/scoped";
 import type { GuardContext } from "../src/lib/db/guard";
 
+type ScopedCtx = Parameters<typeof getScopedDb>[0];
+
 const ENG = "cmrot35z70000d6vbtk7s2xfo";
 
 async function main() {
@@ -17,11 +19,13 @@ async function main() {
     if (!m) throw new Error(`no ${r} membership`);
     return m;
   };
-  const ctx = (role: GuardContext["role"]): GuardContext => ({
+  const ctx = (role: GuardContext["role"]): ScopedCtx => ({
     engagementId: ENG,
     membershipId: byRole(role).id,
     role,
     readOnly: false,
+    clerkUserId: byRole(role).clerkUserId ?? `verify:${role}`,
+    actorDisplay: byRole(role).displayName ?? role,
   });
   const lead = getScopedDb(ctx("ENGAGEMENT_LEAD"));
   const viewer = getScopedDb(ctx("CLIENT_VIEWER"));
