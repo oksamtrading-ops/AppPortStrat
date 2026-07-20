@@ -246,10 +246,19 @@ export default async function ApplicationsPage({
               </TableRow>
               <TableRow className="bg-secondary/40 text-[11px] hover:bg-secondary/40">
                 <TableHead />
-                <TableHead className="text-muted-foreground font-normal">min · max · mean · median · mode · n</TableHead>
+                <TableHead
+                  className="text-muted-foreground font-normal"
+                  title="Score statistics over the currently filtered rows — the workbook's Refresh Statistics, computed live. Hover any value for its meaning."
+                >
+                  min · max · mean · median · mode · n
+                </TableHead>
                 <TableHead />
-                <TableHead className="text-muted-foreground text-right font-normal tabular-nums">{statsLine(bvStats)}</TableHead>
-                <TableHead className="text-muted-foreground text-right font-normal tabular-nums">{statsLine(itStats)}</TableHead>
+                <TableHead className="text-muted-foreground text-right font-normal tabular-nums">
+                  <StatsLine stats={bvStats} kind="Business Value" />
+                </TableHead>
+                <TableHead className="text-muted-foreground text-right font-normal tabular-nums">
+                  <StatsLine stats={itStats} kind="IT Health" />
+                </TableHead>
                 <TableHead colSpan={canEdit ? 4 : 2} />
               </TableRow>
             </TableHeader>
@@ -382,8 +391,26 @@ function ScoreCell({
   );
 }
 
-function statsLine(s: ReturnType<typeof computeColumnStats>): string {
-  if (s.count === 0) return "—";
+/** Each figure carries its own tooltip so the unlabeled row stays readable. */
+function StatsLine({ stats, kind }: { stats: ReturnType<typeof computeColumnStats>; kind: string }) {
+  if (stats.count === 0) return <>—</>;
   const f = (v: number | null) => (v === null ? "N/A" : v.toFixed(1));
-  return `${f(s.min)} · ${f(s.max)} · ${f(s.mean)} · ${f(s.median)} · ${f(s.mode)} · ${s.count}`;
+  const cells: [string, string, string][] = [
+    [f(stats.min), "min", `Lowest ${kind} score in the filtered rows`],
+    [f(stats.max), "max", `Highest ${kind} score in the filtered rows`],
+    [f(stats.mean), "mean", `Average ${kind} score (unweighted) across the filtered rows`],
+    [f(stats.median), "median", `Middle ${kind} score — far from the mean means a skewed distribution`],
+    [f(stats.mode), "mode", `Most frequent ${kind} score — N/A when no value repeats`],
+    [String(stats.count), "n", `Applications with a ${kind} score in the current filter`],
+  ];
+  return (
+    <>
+      {cells.map(([value, label, help], i) => (
+        <span key={label} className="cursor-help" title={`${label}: ${help}`}>
+          {i > 0 ? " · " : ""}
+          {value}
+        </span>
+      ))}
+    </>
+  );
 }
