@@ -12,14 +12,17 @@ export function aiConfigured(): boolean {
 
 const MAX_OUTPUT_TOKENS = 1500;
 
-export async function generateNarrative(prompt: { system: string; user: string }): Promise<string> {
+export async function generateNarrative(
+  prompt: { system: string; user: string },
+  maxTokens: number = MAX_OUTPUT_TOKENS,
+): Promise<string> {
   if (!aiConfigured()) {
     throw new Error("AI is not configured on this platform — set ANTHROPIC_API_KEY");
   }
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const response = await client.messages.create({
     model: process.env.APS_AI_MODEL ?? "claude-sonnet-5",
-    max_tokens: MAX_OUTPUT_TOKENS,
+    max_tokens: maxTokens,
     system: prompt.system,
     messages: [{ role: "user", content: prompt.user }],
   });

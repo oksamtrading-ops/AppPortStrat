@@ -146,8 +146,20 @@ export function buildBriefPrompt(bundle: LandscapeBundle): { system: string; use
  * failure mode: every digit-group in the output must appear somewhere in the
  * bundle. Returns the figures it could not verify.
  */
-export function findUnverifiedNumbers(text: string, bundle: LandscapeBundle): string[] {
+export function findUnverifiedNumbers(text: string, bundle: unknown): string[] {
   const allowed = JSON.stringify(bundle).replace(/,/g, "");
   const tokens = text.match(/\d[\d,.]*/g) ?? [];
   return [...new Set(tokens.map((t) => t.replace(/[,.]+$/, "").replace(/,/g, "")).filter((t) => !allowed.includes(t)))];
+}
+
+/** Human-directed refinement: re-run with the prior draft plus one instruction. */
+export function buildRefinePrompt(
+  bundle: LandscapeBundle,
+  previous: string,
+  instruction: string,
+): { system: string; user: string } {
+  return {
+    system: GROUNDING,
+    user: `Revise the narrative below: ${instruction}. Keep every grounding rule — figures verbatim from the DATA only.\n\nDATA:\n${JSON.stringify(bundle)}\n\nNARRATIVE:\n${previous}`,
+  };
 }

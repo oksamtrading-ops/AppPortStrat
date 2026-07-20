@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireEngagementContext } from "@/lib/auth/context";
 import { AiMapPanel } from "@/components/dashboard/ai-map-panel";
+import { AiQualityPanel } from "@/components/dashboard/ai-quality-panel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pill } from "@/components/ui/pill";
 
@@ -136,6 +137,8 @@ export default async function QualityPage({ params }: { params: Promise<{ engage
       {engagement.aiEnabled && unmapped.length > 0 && !ctx.readOnly ? (
         <AiMapPanel engagementId={engagementId} unmappedCount={unmapped.length} />
       ) : null}
+
+      {engagement.aiEnabled ? <AiQualityPanel engagementId={engagementId} /> : null}
 
       {clean ? <Pill color="green">All checks pass — the dataset is analysis-ready.</Pill> : null}
 
