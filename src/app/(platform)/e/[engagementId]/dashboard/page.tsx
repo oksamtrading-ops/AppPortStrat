@@ -145,13 +145,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
             <a href={`${base}/export`} download className="hover:bg-secondary rounded-lg border px-3 py-1.5 text-sm font-medium">
               Export data (XLSX)
             </a>
+            {engagement.aiEnabled ? <AiPanel engagementId={engagementId} /> : null}
           </div>
         ) : null}
       </div>
-
-      {engagement.aiEnabled && (ctx.role === "ENGAGEMENT_LEAD" || ctx.role === "CONSULTANT") ? (
-        <AiPanel engagementId={engagementId} />
-      ) : null}
 
       {/* Executive summary strip */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
