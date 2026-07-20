@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +37,7 @@ export function AiImportDialog({ engagementId }: { engagementId: string }) {
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [rows, setRows] = useState<ReviewRow[] | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [notes, setNotes] = useState<string | null>(null);
 
   function reset() {
@@ -124,11 +125,35 @@ export function AiImportDialog({ engagementId }: { engagementId: string }) {
         {!rows ? (
           <div className="space-y-3">
             <input
+              ref={fileRef}
               type="file"
               accept="image/png,image/jpeg,image/webp,image/gif,application/pdf"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="text-sm"
+              className="hidden"
             />
+            <div className="flex items-center gap-3">
+              <Button type="button" variant="outline" onClick={() => fileRef.current?.click()}>
+                <Upload className="size-4" /> Choose a file…
+              </Button>
+              {file ? (
+                <span className="flex items-center gap-1.5 text-sm">
+                  {file.name}
+                  <button
+                    type="button"
+                    aria-label="Clear file"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      setFile(null);
+                      if (fileRef.current) fileRef.current.value = "";
+                    }}
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </span>
+              ) : (
+                <span className="text-muted-foreground text-sm">PNG, JPEG, WebP, GIF, or PDF — up to 11MB</span>
+              )}
+            </div>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
