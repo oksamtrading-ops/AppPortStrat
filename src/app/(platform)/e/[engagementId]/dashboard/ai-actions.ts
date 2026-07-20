@@ -5,7 +5,7 @@ import { requireEngagementContext } from "@/lib/auth/context";
 import { rateLimit } from "@/lib/db/admin";
 import { writeAudit } from "@/lib/audit";
 import { aiConfigured, generateNarrative } from "@/lib/ai/generate";
-import { buildBriefPrompt, buildLandscapePrompt, loadLandscapeBundle } from "@/lib/ai/landscape";
+import { buildBriefPrompt, buildLandscapePrompt, findUnverifiedNumbers, loadLandscapeBundle } from "@/lib/ai/landscape";
 
 const schema = z.object({ engagementId: z.string().min(1), kind: z.enum(["landscape", "brief"]) });
 
@@ -33,13 +33,22 @@ export async function generateAiNarrative(input: {
   }
 
   try {
-    const bundle = await loadLandscapeBundle(db, {
-      name: engagement.name,
-      clientName: engagement.clientName,
-      currency: engagement.currency,
-    });
+    const bundle = await loadLandscapeBundle(
+      db,
+      { name: engagement.name, clientName: engagement.clientName, currency: engagement.currency },
+      new Date().toISOString().slice(0, 10),
+    );
     const prompt = parsed.kind === "landscape" ? buildLandscapePrompt(bundle) : buildBriefPrompt(bundle);
-    const text = await generateNarrative(prompt);
+    let text = await generateNarrative(prompt);
+    // Deterministic grounding check: regenerate once on a miss; if it still
+    // fails, ship the draft with an explicit warning instead of silently.
+    if (findUnverifiedNumbers(text, bundle).length > 0) {
+      text = await generateNarrative(prompt);
+      const misses = findUnverifiedNumbers(text, bundle);
+      if (misses.length > 0) {
+        text += "\n\nGROUNDING CHECK: figure(s) " + misses.join(", ") + " could not be verified against the source data - confirm before sharing.";
+      }
+    }
 
     await writeAudit(db, ctx, {
       action: "ai.narrative.generate",
