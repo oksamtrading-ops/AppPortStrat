@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireEngagementContext } from "@/lib/auth/context";
+import { AiMapPanel } from "@/components/dashboard/ai-map-panel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pill } from "@/components/ui/pill";
 
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 /** Data-quality panel (APP-SPEC §4.14): what's missing before the analysis is defensible. */
 export default async function QualityPage({ params }: { params: Promise<{ engagementId: string }> }) {
   const { engagementId } = await params;
-  const { ctx, db } = await requireEngagementContext(engagementId, "CONSULTANT");
+  const { ctx, db, engagement } = await requireEngagementContext(engagementId, "CONSULTANT");
   if (ctx.readOnly && ctx.role === "CLIENT_RESPONDENT") redirect(`/e/${engagementId}/surveys`);
 
   const [apps, placeholderNodes, optionLists, assignedAppIds] = await Promise.all([
@@ -131,6 +132,10 @@ export default async function QualityPage({ params }: { params: Promise<{ engage
           Gaps that weaken the analysis, with a path to fix each one.
         </p>
       </div>
+
+      {engagement.aiEnabled && unmapped.length > 0 && !ctx.readOnly ? (
+        <AiMapPanel engagementId={engagementId} unmappedCount={unmapped.length} />
+      ) : null}
 
       {clean ? <Pill color="green">All checks pass — the dataset is analysis-ready.</Pill> : null}
 
