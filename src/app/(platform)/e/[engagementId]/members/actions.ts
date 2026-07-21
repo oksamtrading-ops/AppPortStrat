@@ -46,12 +46,23 @@ export async function inviteMember(formData: FormData) {
   if (session.mode === "clerk") {
     if (!engagement.clerkOrgId) throw new Error("Engagement has no Clerk organization bound");
     const { clerkClient } = await import("@clerk/nextjs/server");
+    const { headers } = await import("next/headers");
     const client = await clerkClient();
+    // Point the invitation link back at THIS app's sign-up page. Without a
+    // redirectUrl, Clerk's email link lands on its hosted Account Portal and
+    // the invitee never returns to the app after creating their account. The
+    // /sign-up page renders <SignUp/>, which consumes the __clerk_ticket to
+    // create the account, accept the org invite, then redirect in-app.
+    const h = await headers();
+    const host = h.get("x-forwarded-host") ?? h.get("host");
+    const proto = h.get("x-forwarded-proto") ?? "https";
+    const redirectUrl = host ? `${proto}://${host}/sign-up` : undefined;
     await client.organizations.createOrganizationInvitation({
       organizationId: engagement.clerkOrgId,
       emailAddress: parsed.email,
       role: ROLE_TO_CLERK[parsed.role],
       inviterUserId: session.userId,
+      redirectUrl,
     });
   }
 
