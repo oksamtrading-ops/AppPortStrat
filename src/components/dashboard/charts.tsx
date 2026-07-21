@@ -21,7 +21,16 @@ export const CHART_COLORS = {
   dark: "#1f2937",
 } as const;
 
-export function DonutChart({ slices, centerLabel }: { slices: Slice[]; centerLabel?: string }) {
+export function DonutChart({
+  slices,
+  centerLabel,
+  formatValue = (n) => String(n),
+}: {
+  slices: Slice[];
+  centerLabel?: string;
+  /** Formats each slice's value in the legend + tooltip (e.g. currency). Defaults to the raw number. */
+  formatValue?: (value: number) => string;
+}) {
   const data = slices.filter((s) => s.value > 0);
   const total = data.reduce((sum, s) => sum + s.value, 0);
   if (total === 0) {
@@ -55,7 +64,7 @@ export function DonutChart({ slices, centerLabel }: { slices: Slice[]; centerLab
               strokeDasharray={s.dasharray}
               strokeDashoffset={s.dashoffset}
             >
-              <title>{`${s.name}: ${s.value}`}</title>
+              <title>{`${s.name}: ${formatValue(s.value)}`}</title>
             </circle>
           ))}
         </svg>
@@ -69,7 +78,7 @@ export function DonutChart({ slices, centerLabel }: { slices: Slice[]; centerLab
         {data.map((s) => (
           <span key={s.name} className="text-muted-foreground flex items-center gap-1 text-xs">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
-            {s.name} <span className="tabular-nums">({s.value})</span>
+            {s.name} <span className="tabular-nums">({formatValue(s.value)})</span>
           </span>
         ))}
       </div>

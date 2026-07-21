@@ -272,6 +272,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
               <>
                 <DonutChart
                   centerLabel={formatMoney(finance.totalCost, currency)}
+                  formatValue={(n) => formatMoney(n, currency)}
                   slices={[
                     { name: DISPOSITION_LABELS.KEEP_AS_IS, value: finance.costOf("KEEP_AS_IS"), color: CHART_COLORS.green },
                     { name: DISPOSITION_LABELS.RETOOL, value: finance.costOf("RETOOL"), color: CHART_COLORS.blue },

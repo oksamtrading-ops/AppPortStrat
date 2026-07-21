@@ -101,6 +101,7 @@ export default async function FinancialsPage({ params }: { params: Promise<{ eng
           <CardContent>
             <DonutChart
               centerLabel={costed.length ? `${costed.length} costed` : undefined}
+              formatValue={(n) => formatMoney(n, currency)}
               slices={[
                 { name: DISPOSITION_LABELS.KEEP_AS_IS, value: costOf("KEEP_AS_IS"), color: CHART_COLORS.green },
                 { name: DISPOSITION_LABELS.RETOOL, value: costOf("RETOOL"), color: CHART_COLORS.blue },
