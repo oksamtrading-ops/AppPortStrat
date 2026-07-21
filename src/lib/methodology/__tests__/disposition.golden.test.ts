@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeDisposition, computeUrgentFlags, resolveFinalDisposition } from "../disposition";
+import { computeDisposition, computeUrgentFlags, finalDisposition, resolveFinalDisposition } from "../disposition";
 
 const T = { optBv: 3.0, urgBv: 2.0, optIt: 3.0, urgIt: 2.0 };
 
@@ -47,6 +47,18 @@ describe("disposition engine — golden tests 9–14 (inventory §4)", () => {
 
   it("no override → computed passes through", () => {
     expect(resolveFinalDisposition("KEEP_AS_IS", null)).toBe("KEEP_AS_IS");
+  });
+
+  it("finalDisposition (read-time): override wins, else computed, else UNKNOWN", () => {
+    // Override present → override value (even against a different computed).
+    expect(finalDisposition({ override: { disposition: "TERMINATE" }, result: { computedDisposition: "KEEP_AS_IS" } })).toBe("TERMINATE");
+    // No override → computed.
+    expect(finalDisposition({ override: null, result: { computedDisposition: "RETOOL" } })).toBe("RETOOL");
+    // Neither → UNKNOWN (missing rows, unscored app).
+    expect(finalDisposition({ override: null, result: null })).toBe("UNKNOWN");
+    expect(finalDisposition({})).toBe("UNKNOWN");
+    // Null override.disposition is ignored (falls through to computed).
+    expect(finalDisposition({ override: { disposition: null }, result: { computedDisposition: "REDESIGN" } })).toBe("REDESIGN");
   });
 
   it("urgent flags: strictly below urgent threshold AND score ≠ 0 (quirk #7 — alerts only)", () => {

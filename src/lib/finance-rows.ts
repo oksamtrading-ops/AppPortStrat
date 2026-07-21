@@ -1,6 +1,6 @@
 // NOTE: no "server-only" marker — exercised by verification scripts; only server code imports this.
 import type { ScopedDb } from "@/lib/db/scoped";
-import type { Disposition } from "@/lib/methodology";
+import { finalDisposition, type Disposition } from "@/lib/methodology";
 import { GRAND_TOTAL_SECTIONS } from "@/lib/finance";
 
 /**
@@ -73,7 +73,6 @@ export async function loadFinanceRows(db: ScopedDb): Promise<FinanceRows> {
       subtotals.set(section, (subtotals.get(section) ?? 0) + answer.numericValue);
     }
     const grandTotal = grandSections.reduce((sum, s) => sum + (subtotals.get(s) ?? 0), 0);
-    const computed = (app.result?.computedDisposition ?? "UNKNOWN") as Disposition;
     return {
       appId: app.id,
       appNumber: app.appNumber,
@@ -84,7 +83,7 @@ export async function loadFinanceRows(db: ScopedDb): Promise<FinanceRows> {
       subtotals,
       grandTotal,
       hasCosts: subtotals.size > 0,
-      finalDisposition: ((app.override?.disposition as Disposition | undefined) ?? computed) as Disposition,
+      finalDisposition: finalDisposition(app),
     };
   });
 

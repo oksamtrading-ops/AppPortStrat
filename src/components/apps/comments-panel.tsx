@@ -8,14 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { addComment } from "@/app/(platform)/e/[engagementId]/applications/comment-actions";
 
-export interface CommentView {
-  id: string;
-  body: string;
-  internal: boolean;
-  authorName: string;
-  createdAt: string; // pre-formatted server-side
-  replies: Omit<CommentView, "replies">[];
-}
+// Re-exported so existing `import { CommentsPanel, type CommentView }` sites
+// keep working; the canonical definition lives in the pure lib module.
+export type { CommentView } from "@/lib/comments";
+import type { CommentView } from "@/lib/comments";
 
 /**
  * Threaded discussion on one application OR one capability (exactly one target

@@ -2,9 +2,10 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { requireEngagementContext } from "@/lib/auth/context";
-import { DISPOSITION_LABELS, type Disposition } from "@/lib/methodology";
+import { DISPOSITION_LABELS, finalDisposition } from "@/lib/methodology";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CommentsPanel, type CommentView } from "@/components/apps/comments-panel";
+import { CommentsPanel } from "@/components/apps/comments-panel";
+import { toCommentViews } from "@/lib/comments";
 
 export const dynamic = "force-dynamic";
 
@@ -70,14 +71,7 @@ export default async function CapabilityDetailPage({
       : db.membership.findMany({ where: { role: { in: ["ENGAGEMENT_LEAD", "CONSULTANT"] } }, select: { displayName: true } }),
   ]);
 
-  const fmt = (d: Date) => d.toISOString().slice(0, 16).replace("T", " ");
-  const toView = (c: (typeof commentRows)[number]) => ({
-    id: c.id, body: c.body, internal: c.internal,
-    authorName: c.author.displayName ?? c.author.email, createdAt: fmt(c.createdAt),
-  });
-  const comments: CommentView[] = commentRows
-    .filter((c) => !c.parentId)
-    .map((root) => ({ ...toView(root), replies: commentRows.filter((c) => c.parentId === root.id).map(toView) }));
+  const comments = toCommentViews(commentRows);
 
   const canWrite = !ctx.readOnly && (ctx.role === "ENGAGEMENT_LEAD" || ctx.role === "CONSULTANT");
   const appHref = (id: string) =>
@@ -116,9 +110,7 @@ export default async function CapabilityDetailPage({
           ) : (
             <ul className="divide-y text-sm">
               {apps.map((a) => {
-                const disposition = ((a.override?.disposition as Disposition | undefined) ??
-                  (a.result?.computedDisposition as Disposition | undefined) ??
-                  "UNKNOWN") as Disposition;
+                const disposition = finalDisposition(a);
                 return (
                   <li key={a.id} className="flex items-center justify-between gap-3 py-1.5">
                     <Link href={appHref(a.id)} className="min-w-0 truncate hover:underline">

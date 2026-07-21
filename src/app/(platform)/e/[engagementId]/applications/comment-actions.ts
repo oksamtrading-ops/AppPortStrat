@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireEngagementContext } from "@/lib/auth/context";
 import { writeAudit } from "@/lib/audit";
+import { resolveMentions } from "@/lib/comments";
 
 /**
  * Collaboration C1/C3: threaded comments on applications AND capabilities.
@@ -80,10 +81,8 @@ export async function addComment(input: {
       !(parsed.internal && m.role === "CLIENT_VIEWER");
 
     const recipients = new Map<string, "mention" | "reply">();
-    const bodyLower = parsed.body.toLowerCase();
-    for (const m of [...members].sort((a, b) => (b.displayName?.length ?? 0) - (a.displayName?.length ?? 0))) {
-      if (!m.displayName || !eligible(m)) continue;
-      if (bodyLower.includes(`@${m.displayName.toLowerCase()}`)) recipients.set(m.id, "mention");
+    for (const id of resolveMentions({ body: parsed.body, members, actorMembershipId: ctx.membershipId, internal: parsed.internal })) {
+      recipients.set(id, "mention");
     }
     if (parsed.parentId) {
       const root = await db.comment.findUnique({ where: { id: parsed.parentId }, select: { authorMembershipId: true } });

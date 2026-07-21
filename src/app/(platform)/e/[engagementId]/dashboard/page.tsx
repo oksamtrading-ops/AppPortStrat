@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireEngagementContext } from "@/lib/auth/context";
 import { THRESHOLD_DEFAULTS } from "@/lib/engagement-defaults";
-import { computeHeatBucket, computeScoreDistribution, DISPOSITION_LABELS, SCORE_BUCKET_LABELS } from "@/lib/methodology";
+import { computeHeatBucket, computeScoreDistribution, DISPOSITION_LABELS, finalDisposition, SCORE_BUCKET_LABELS } from "@/lib/methodology";
 import type { Disposition, HeatBucket } from "@/lib/methodology";
 import { formatMoney } from "@/lib/finance";
 import { loadFinanceRows } from "@/lib/finance-rows";
@@ -49,10 +49,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
   const heat = { t1: thresholds?.heatT1 ?? THRESHOLD_DEFAULTS.heatT1, t2: thresholds?.heatT2 ?? THRESHOLD_DEFAULTS.heatT2 };
   const currency = engagement.currency;
 
-  const finalOf = (app: (typeof apps)[number]): Disposition =>
-    ((app.override?.disposition as Disposition | undefined) ??
-      (app.result?.computedDisposition as Disposition | undefined) ??
-      "UNKNOWN");
+  const finalOf = finalDisposition;
 
   // The workbook's analysis pool: in scope AND utilized (inventory §8).
   const pool = apps.filter((a) => a.inScope && a.isUtilized);

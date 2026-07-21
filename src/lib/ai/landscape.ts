@@ -1,6 +1,6 @@
 // NOTE: no "server-only" marker — the pure prompt builder is unit-tested; only server code imports this.
 import type { ScopedDb } from "@/lib/db/scoped";
-import type { Disposition } from "@/lib/methodology";
+import { finalDisposition, type Disposition } from "@/lib/methodology";
 import { THRESHOLD_DEFAULTS } from "@/lib/engagement-defaults";
 import { computeHeatBucket } from "@/lib/methodology";
 import { formatMoney } from "@/lib/finance";
@@ -48,8 +48,7 @@ export async function loadLandscapeBundle(
     loadFinanceRows(db),
   ]);
 
-  const finalOf = (a: (typeof apps)[number]): Disposition =>
-    ((a.override?.disposition as Disposition | undefined) ?? (a.result?.computedDisposition as Disposition | undefined) ?? "UNKNOWN");
+  const finalOf = finalDisposition;
   const pool = apps.filter((a) => a.inScope && a.isUtilized);
   const count = (d: Disposition) => pool.filter((a) => finalOf(a) === d).length;
   const quadrants = {

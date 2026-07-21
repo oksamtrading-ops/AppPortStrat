@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireEngagementContext } from "@/lib/auth/context";
 import { writeAudit } from "@/lib/audit";
-import type { Disposition } from "@/lib/methodology";
+import { finalDisposition } from "@/lib/methodology";
 
 /**
  * Collaboration C3: disposition sign-off — the Lead records that the client
@@ -39,9 +39,7 @@ export async function recordSignOff(
     });
     if (!app) return { ok: false, error: "Unknown application" };
 
-    const final = ((app.override?.disposition as Disposition | undefined) ??
-      (app.result?.computedDisposition as Disposition | undefined) ??
-      "UNKNOWN") as Disposition;
+    const final = finalDisposition(app);
     if (final === "UNKNOWN") {
       return { ok: false, error: "This application has no disposition yet — there is nothing to sign off" };
     }

@@ -1,7 +1,7 @@
 // NOTE: no "server-only" marker — exercised by verification scripts; only route handlers call this in the app.
 import PptxGenJS from "pptxgenjs";
 import type { ScopedDb } from "@/lib/db/scoped";
-import { DISPOSITION_LABELS, HEAT_COLORS, computeHeatBucket, formatScore } from "@/lib/methodology";
+import { DISPOSITION_LABELS, HEAT_COLORS, computeHeatBucket, finalDisposition, formatScore } from "@/lib/methodology";
 import type { Disposition } from "@/lib/methodology";
 import { THRESHOLD_DEFAULTS } from "@/lib/engagement-defaults";
 import { loadCapabilityTallies } from "@/lib/capability-heat";
@@ -61,10 +61,7 @@ export async function buildEngagementDeck(
     heatT2: thresholds?.heatT2 ?? THRESHOLD_DEFAULTS.heatT2,
   };
 
-  const finalOf = (app: (typeof apps)[number]): Disposition =>
-    ((app.override?.disposition as Disposition | undefined) ??
-      (app.result?.computedDisposition as Disposition | undefined) ??
-      "UNKNOWN");
+  const finalOf = finalDisposition;
   const pool = apps.filter((a) => a.inScope && a.isUtilized);
   const count = (d: Disposition) => pool.filter((a) => finalOf(a) === d).length;
   const nlu = apps.filter((a) => a.inScope && !a.isUtilized).length;

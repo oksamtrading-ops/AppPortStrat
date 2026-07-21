@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireEngagementContext } from "@/lib/auth/context";
 import { THRESHOLD_DEFAULTS } from "@/lib/engagement-defaults";
-import { DISPOSITION_LABELS, FILTER_LABELS, formatScore, computeColumnStats } from "@/lib/methodology";
+import { DISPOSITION_LABELS, FILTER_LABELS, finalDisposition, formatScore, computeColumnStats } from "@/lib/methodology";
 import type { Disposition, FilterHit } from "@/lib/methodology";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -106,9 +106,7 @@ export default async function ApplicationsPage({
     if (capFilter && (!app.capabilityNodeId || !capFilter.ids.has(app.capabilityNodeId))) return false;
     if (q && !`${app.name} ${app.acronym ?? ""}`.toLowerCase().includes(q)) return false;
     if (filters.disposition) {
-      const computed = (app.result?.computedDisposition ?? "UNKNOWN") as Disposition;
-      const finalDisposition = (app.override?.disposition as Disposition | undefined) ?? computed;
-      if (finalDisposition !== filters.disposition) return false;
+      if (finalDisposition(app) !== filters.disposition) return false;
     }
     if (filters.scope === "in" && !app.inScope) return false;
     if (filters.scope === "out" && app.inScope) return false;
@@ -129,17 +127,14 @@ export default async function ApplicationsPage({
     ),
   );
 
-  const matrixApps: MatrixApp[] = applications.map((app) => {
-    const computed = (app.result?.computedDisposition ?? "UNKNOWN") as Disposition;
-    return {
-      id: app.id,
-      name: app.name,
-      acronym: app.acronym,
-      bv: app.result?.bvScore ?? 0,
-      it: app.result?.itScore ?? 0,
-      disposition: (app.override?.disposition as Disposition | undefined) ?? computed,
-    };
-  });
+  const matrixApps: MatrixApp[] = applications.map((app) => ({
+    id: app.id,
+    name: app.name,
+    acronym: app.acronym,
+    bv: app.result?.bvScore ?? 0,
+    it: app.result?.itScore ?? 0,
+    disposition: finalDisposition(app),
+  }));
 
   return (
     <div className="space-y-5">
@@ -258,7 +253,7 @@ export default async function ApplicationsPage({
               {applications.map((app) => {
                 const result = app.result;
                 const computed = (result?.computedDisposition ?? "UNKNOWN") as Disposition;
-                const finalDisposition = (app.override?.disposition as Disposition | undefined) ?? computed;
+                const final = finalDisposition(app);
                 const complete = app.responses.filter((r) => r.status === "COMPLETE").length;
                 return (
                   <TableRow key={app.id}>
@@ -305,14 +300,14 @@ export default async function ApplicationsPage({
                     </TableCell>
                     <TableCell>
                       <Pill
-                        color={DISPOSITION_COLOR[finalDisposition]}
+                        color={DISPOSITION_COLOR[final]}
                         title={app.override ? `Override — computed ${DISPOSITION_LABELS[computed]}: ${app.override.justification}` : undefined}
                       >
-                        {DISPOSITION_LABELS[finalDisposition]}
+                        {DISPOSITION_LABELS[final]}
                         {app.override ? " *" : ""}
                       </Pill>
                       {app.signOff ? (
-                        app.signOff.disposition === finalDisposition ? (
+                        app.signOff.disposition === final ? (
                           <span className="ml-1 text-xs text-green-700" title="Disposition signed off by the client">
                             ✓
                           </span>

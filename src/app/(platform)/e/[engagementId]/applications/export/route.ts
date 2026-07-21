@@ -1,6 +1,6 @@
 import { requireEngagementContext } from "@/lib/auth/context";
 import { toCsv } from "@/lib/tabular";
-import { DISPOSITION_LABELS, FILTER_LABELS } from "@/lib/methodology";
+import { DISPOSITION_LABELS, FILTER_LABELS, finalDisposition } from "@/lib/methodology";
 import type { Disposition, FilterHit } from "@/lib/methodology";
 import { writeAudit } from "@/lib/audit";
 
@@ -68,10 +68,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ engagem
   const rows = applications.map((app) => {
     const chain = chainFor(app.capabilityNodeId);
     const computed = (app.result?.computedDisposition ?? "UNKNOWN") as Disposition;
-    const finalDisposition = (app.override?.disposition as Disposition | undefined) ?? computed;
+    const final = finalDisposition(app);
     const statusLabel = app.result?.filterHit
       ? FILTER_LABELS[app.result.filterHit as FilterHit]
-      : DISPOSITION_LABELS[finalDisposition];
+      : DISPOSITION_LABELS[final];
     return [
       app.appNumber,
       app.name,

@@ -1,6 +1,6 @@
 // NOTE: no "server-only" marker — exercised by verification scripts; only server code imports this.
 import type { ScopedDb } from "@/lib/db/scoped";
-import type { Disposition } from "@/lib/methodology";
+import { finalDisposition } from "@/lib/methodology";
 
 /**
  * Shared per-capability disposition tallies for the Capability Map cards and
@@ -46,8 +46,7 @@ export async function loadCapabilityTallies(db: ScopedDb): Promise<{
   const tallies = new Map<string, CapabilityTally>();
   for (const app of apps) {
     const nodeId = app.capabilityNodeId!;
-    const computed = (app.result?.computedDisposition ?? "UNKNOWN") as Disposition;
-    const final = (app.override?.disposition as Disposition | undefined) ?? computed;
+    const final = finalDisposition(app);
     const tally = tallies.get(nodeId) ?? { ...EMPTY_TALLY };
     tally.total += 1;
     if (final !== "UNKNOWN") {

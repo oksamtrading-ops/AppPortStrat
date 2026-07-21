@@ -1,8 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { requireEngagementContext } from "@/lib/auth/context";
-import { DISPOSITION_LABELS, type Disposition } from "@/lib/methodology";
+import { DISPOSITION_LABELS, finalDisposition } from "@/lib/methodology";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CommentsPanel, type CommentView } from "@/components/apps/comments-panel";
+import { CommentsPanel } from "@/components/apps/comments-panel";
+import { toCommentViews } from "@/lib/comments";
 
 export const dynamic = "force-dynamic";
 
@@ -30,9 +31,7 @@ export default async function ViewApplicationPage({
   });
   if (!app) notFound();
 
-  const disposition = ((app.override?.disposition as Disposition | undefined) ??
-    (app.result?.computedDisposition as Disposition | undefined) ??
-    "UNKNOWN") as Disposition;
+  const disposition = finalDisposition(app);
 
   const commentRows = await db.comment.findMany({
     where: { applicationId },
@@ -40,13 +39,7 @@ export default async function ViewApplicationPage({
     include: { author: { select: { displayName: true, email: true } } },
   });
   const fmt = (d: Date) => d.toISOString().slice(0, 16).replace("T", " ");
-  const toView = (c: (typeof commentRows)[number]) => ({
-    id: c.id, body: c.body, internal: c.internal,
-    authorName: c.author.displayName ?? c.author.email, createdAt: fmt(c.createdAt),
-  });
-  const comments: CommentView[] = commentRows
-    .filter((c) => !c.parentId)
-    .map((root) => ({ ...toView(root), replies: commentRows.filter((c) => c.parentId === root.id).map(toView) }));
+  const comments = toCommentViews(commentRows);
 
   return (
     <div className="max-w-3xl space-y-4">

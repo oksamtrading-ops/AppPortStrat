@@ -48,3 +48,18 @@ export function resolveFinalDisposition(
   }
   return override.disposition;
 }
+
+/**
+ * READ-TIME final disposition for a loaded application row: the Lead's override
+ * if present, else the computed value, else UNKNOWN. The write-time invariants
+ * (4R-only, justification required) are enforced by resolveFinalDisposition on
+ * save and by a DB CHECK, so stored values are already constrained — this is
+ * the single place every display/export/AI read should resolve "which value is
+ * final" instead of hand-inlining `override?.disposition ?? computed ?? UNKNOWN`.
+ */
+export function finalDisposition(app: {
+  override?: { disposition: string | null } | null;
+  result?: { computedDisposition: string | null } | null;
+}): Disposition {
+  return (app.override?.disposition ?? app.result?.computedDisposition ?? "UNKNOWN") as Disposition;
+}

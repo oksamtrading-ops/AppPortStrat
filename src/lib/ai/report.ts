@@ -1,6 +1,6 @@
 // NOTE: no "server-only" marker — pure prompt builders are unit-tested; only server code imports this.
 import type { ScopedDb } from "@/lib/db/scoped";
-import type { Disposition } from "@/lib/methodology";
+import { finalDisposition } from "@/lib/methodology";
 import { DISPOSITION_LABELS } from "@/lib/methodology";
 import { formatMoney } from "@/lib/finance";
 import { loadFinanceRows } from "@/lib/finance-rows";
@@ -59,9 +59,7 @@ export async function loadReportData(
   return {
     bundle,
     apps: apps.slice(0, MAX_REPORT_APPS).map((a) => {
-      const d = ((a.override?.disposition as Disposition | undefined) ??
-        (a.result?.computedDisposition as Disposition | undefined) ??
-        "UNKNOWN") as Disposition;
+      const d = finalDisposition(a);
       return {
         name: a.name,
         disposition: a.isUtilized ? DISPOSITION_LABELS[d] : "No Longer Utilized",

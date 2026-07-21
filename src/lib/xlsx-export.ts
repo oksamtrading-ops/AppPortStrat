@@ -1,7 +1,7 @@
 // NOTE: no "server-only" marker — exercised by verification scripts; only route handlers call this in the app.
 import ExcelJS from "exceljs";
 import type { ScopedDb } from "@/lib/db/scoped";
-import { DISPOSITION_LABELS, FILTER_LABELS } from "@/lib/methodology";
+import { DISPOSITION_LABELS, FILTER_LABELS, finalDisposition } from "@/lib/methodology";
 import type { Disposition, FilterHit } from "@/lib/methodology";
 
 const HEADER_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F2937" } };
@@ -96,7 +96,7 @@ export async function buildEngagementWorkbook(db: ScopedDb, engagementName: stri
     applications.map((app) => {
       const chain = chainFor(app.capabilityNodeId);
       const computed = (app.result?.computedDisposition ?? "UNKNOWN") as Disposition;
-      const finalDisposition = (app.override?.disposition as Disposition | undefined) ?? computed;
+      const finalDisp = finalDisposition(app);
       return [
         app.appNumber, app.name, app.acronym, app.description, app.applicationType,
         chain.l0, chain.l1, chain.l2, app.businessFunctionDetail, app.target,
@@ -107,7 +107,7 @@ export async function buildEngagementWorkbook(db: ScopedDb, engagementName: stri
         DISPOSITION_LABELS[computed],
         app.override ? DISPOSITION_LABELS[app.override.disposition as Disposition] : null,
         app.override?.justification ?? null,
-        app.result?.filterHit ? FILTER_LABELS[app.result.filterHit as FilterHit] : DISPOSITION_LABELS[finalDisposition],
+        app.result?.filterHit ? FILTER_LABELS[app.result.filterHit as FilterHit] : DISPOSITION_LABELS[finalDisp],
         app.result?.analysisCandidate ? "Y" : "N",
         app.comments,
       ];

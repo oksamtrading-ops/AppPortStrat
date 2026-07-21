@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { requireEngagementContext } from "@/lib/auth/context";
-import { DISPOSITION_LABELS, type Disposition } from "@/lib/methodology";
+import { DISPOSITION_LABELS, finalDisposition, type Disposition } from "@/lib/methodology";
 import { ApplicationForm } from "@/components/apps/application-form";
 import { loadApplicationFormData } from "../../form-data";
-import { CommentsPanel, type CommentView } from "@/components/apps/comments-panel";
+import { CommentsPanel } from "@/components/apps/comments-panel";
+import { toCommentViews } from "@/lib/comments";
 import { SignOffCard } from "@/components/apps/signoff-card";
 
 export const dynamic = "force-dynamic";
@@ -37,27 +38,16 @@ export default async function EditApplicationPage({
     db.membership.findMany({ where: { role: { in: ["ENGAGEMENT_LEAD", "CONSULTANT"] } }, select: { displayName: true } }),
   ]);
   const fmt = (d: Date) => d.toISOString().slice(0, 16).replace("T", " ");
-  const toView = (c: (typeof commentRows)[number]) => ({
-    id: c.id,
-    body: c.body,
-    internal: c.internal,
-    authorName: c.author.displayName ?? c.author.email,
-    createdAt: fmt(c.createdAt),
-  });
-  const comments: CommentView[] = commentRows
-    .filter((c) => !c.parentId)
-    .map((root) => ({ ...toView(root), replies: commentRows.filter((c) => c.parentId === root.id).map(toView) }));
+  const comments = toCommentViews(commentRows);
 
-  const finalDisposition = ((app.override?.disposition as Disposition | undefined) ??
-    (app.result?.computedDisposition as Disposition | undefined) ??
-    "UNKNOWN") as Disposition;
+  const final = finalDisposition(app);
   const signOff = app.signOff
     ? {
         dispositionLabel: DISPOSITION_LABELS[(app.signOff.disposition as Disposition) ?? "UNKNOWN"],
         signedByName: app.signOff.signedBy.displayName ?? app.signOff.signedBy.email,
         signedAt: fmt(app.signOff.createdAt),
         note: app.signOff.note,
-        stale: app.signOff.disposition !== finalDisposition,
+        stale: app.signOff.disposition !== final,
       }
     : null;
 
@@ -95,8 +85,8 @@ export default async function EditApplicationPage({
       <SignOffCard
         engagementId={engagementId}
         applicationId={applicationId}
-        currentDispositionLabel={DISPOSITION_LABELS[finalDisposition]}
-        hasDisposition={finalDisposition !== "UNKNOWN"}
+        currentDispositionLabel={DISPOSITION_LABELS[final]}
+        hasDisposition={final !== "UNKNOWN"}
         signOff={signOff}
         canSign={ctx.role === "ENGAGEMENT_LEAD" && !ctx.readOnly}
       />
