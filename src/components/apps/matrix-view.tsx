@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { DISPOSITION_LABELS, formatScore } from "@/lib/methodology";
 import type { Disposition } from "@/lib/methodology";
 import { cn } from "@/lib/utils";
@@ -30,10 +31,13 @@ export function MatrixView({
   apps,
   optBv,
   optIt,
+  caption,
 }: {
   apps: MatrixApp[];
   optBv: number;
   optIt: number;
+  /** One line describing which applications are plotted (population differs by page). */
+  caption?: string;
 }) {
   const plotted = apps.filter((a) => a.disposition !== "UNKNOWN");
   const unscored = apps.length - plotted.length;
@@ -59,16 +63,31 @@ export function MatrixView({
 
           {plotted.map((a) => {
             const title = `${a.name} — BV ${formatScore(a.bv)}, IT ${formatScore(a.it)} → ${DISPOSITION_LABELS[a.disposition]}`;
-            const className = cn(
-              "absolute z-10 block h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-white",
-              a.href ? "hover:scale-125" : "cursor-default",
+            const dotClass = cn(
+              "absolute z-10 block h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-white transition-transform",
+              a.href ? "hover:scale-150" : "cursor-default",
               DOT[a.disposition],
             );
             const style = { left: xPct(a.bv), top: yPct(a.it) };
-            return a.href ? (
-              <a key={a.id} href={a.href} title={title} className={className} style={style} />
+            const dot = a.href ? (
+              <a href={a.href} title={title} className={dotClass} style={style} />
             ) : (
-              <span key={a.id} title={title} className={className} style={style} />
+              <span title={title} className={dotClass} style={style} />
+            );
+            // Acronym label just right of the dot so names are visible without hovering.
+            const label = a.acronym ? (
+              <span
+                className="text-muted-foreground pointer-events-none absolute z-10 -translate-y-1/2 text-[10px] leading-none font-medium whitespace-nowrap"
+                style={{ left: `calc(${xPct(a.bv)} + 9px)`, top: yPct(a.it) }}
+              >
+                {a.acronym}
+              </span>
+            ) : null;
+            return (
+              <Fragment key={a.id}>
+                {dot}
+                {label}
+              </Fragment>
             );
           })}
 
@@ -91,6 +110,7 @@ export function MatrixView({
           ))}
         {unscored > 0 ? <span>{unscored} unscored application(s) not plotted</span> : null}
       </div>
+      {caption ? <p className="text-muted-foreground text-xs">{caption}</p> : null}
     </div>
   );
 }

@@ -167,7 +167,7 @@ export async function computeSurveyCompletion(
   engagementId: string,
   templateId: string,
   responseId: string | null,
-): Promise<{ answeredCount: number; applicableCount: number; fraction: number }> {
+): Promise<{ answeredCount: number; applicableCount: number; fraction: number; addressedCount: number }> {
   // Reads RLS'd tables (SurveyTemplate, Answer, QuestionWeighting) via the
   // admin door — set the engagement GUC so FORCE'd RLS admits these rows.
   return getRawPrisma().$transaction(async (tx) => {
@@ -186,28 +186,40 @@ export async function computeSurveyCompletion(
         })
       : [];
 
+    // A question is "addressed" when it has any stored response — a value OR an
+    // explicit N/A. Drives auto-complete (every applicable question addressed).
+    const isAddressed = (a: { isNA: boolean; numericValue: number | null; textValue: string | null; boolValue: boolean | null }) =>
+      a.isNA || a.numericValue !== null || a.textValue !== null || a.boolValue !== null;
+
     const scored = template.questions.some((q) => q.scoreFamily !== "NONE");
     if (!scored) {
       // Demographics/Finance: applicable = every field; answered = any value (Excel COUNTA).
-      const answeredCount = answers.filter(
-        (a) => a.isNA || a.numericValue !== null || a.textValue !== null || a.boolValue !== null,
-      ).length;
+      const answeredCount = answers.filter(isAddressed).length;
       const applicableCount = template.questions.length;
-      return { answeredCount, applicableCount, fraction: applicableCount === 0 ? 0 : answeredCount / applicableCount };
+      // For unscored templates "answered" already counts N/A, so addressed = answered.
+      return { answeredCount, applicableCount, addressedCount: answeredCount, fraction: applicableCount === 0 ? 0 : answeredCount / applicableCount };
     }
 
     // IT/BV: applicable = weighted>0 report questions + non-report; answered = numeric (N/A ≠ answered).
-    const weightedCount = await tx.questionWeighting.count({
+    const weighted = await tx.questionWeighting.findMany({
       where: {
         engagementId,
         importanceRating: { gt: 0 },
         question: { templateId, scoreFamily: { in: ["IT", "BUSINESS"] } },
       },
+      select: { questionId: true },
     });
-    const nonReportCount = template.questions.filter((q) => q.scoreFamily === "IT_NON_REPORT").length;
-    const applicableCount = weightedCount + nonReportCount;
-    const answeredCount = answers.filter((a) => !a.isNA && a.numericValue !== null).length;
-    return { answeredCount, applicableCount, fraction: applicableCount === 0 ? 0 : answeredCount / applicableCount };
+    const applicableIds = new Set<string>([
+      ...weighted.map((w) => w.questionId),
+      ...template.questions.filter((q) => q.scoreFamily === "IT_NON_REPORT").map((q) => q.id),
+    ]);
+    const applicableCount = applicableIds.size;
+    // Both counts are scoped to APPLICABLE questions so the ratio never exceeds
+    // 100% (a respondent can answer non-weighted questions too). answered = a
+    // numeric value; addressed also counts an explicit N/A (the auto-complete signal).
+    const answeredCount = answers.filter((a) => applicableIds.has(a.questionId) && !a.isNA && a.numericValue !== null).length;
+    const addressedCount = answers.filter((a) => applicableIds.has(a.questionId) && isAddressed(a)).length;
+    return { answeredCount, applicableCount, addressedCount, fraction: applicableCount === 0 ? 0 : answeredCount / applicableCount };
   });
 }
 

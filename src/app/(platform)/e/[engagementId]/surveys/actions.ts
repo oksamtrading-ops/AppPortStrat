@@ -162,9 +162,28 @@ export async function saveAnswer(input: z.infer<typeof saveSchema>): Promise<Sav
   }
 
   const completion = await computeSurveyCompletion(ctx.engagementId, parsed.templateId, response.id);
-  const fresh = await db.surveyResponse.findUnique({ where: { id: response.id }, select: { status: true } });
 
-  return { ok: true, completion, scores, status: (fresh?.status ?? "IN_PROGRESS") as never };
+  // Auto-status: a survey is COMPLETE the moment every applicable question is
+  // addressed — a value OR an explicit N/A (blanks still block, so skipping is
+  // a deliberate N/A, not an ambiguous empty). Adding answers never reopens a
+  // survey (so a manual "done with blanks" completion survives edits); only
+  // CLEARING an answer that drops it below fully-addressed auto-reopens it.
+  const current = (await db.surveyResponse.findUnique({ where: { id: response.id }, select: { status: true } }))?.status ?? "IN_PROGRESS";
+  const fullyAddressed = completion.applicableCount > 0 && completion.addressedCount >= completion.applicableCount;
+  let nextStatus: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETE" = current;
+  if (fullyAddressed && current !== "COMPLETE") nextStatus = "COMPLETE";
+  else if (parsed.raw === null && !fullyAddressed && current === "COMPLETE") nextStatus = "IN_PROGRESS";
+  if (nextStatus !== current) {
+    await db.surveyResponse.update({ where: { id: response.id }, data: { status: nextStatus, updatedById: ctx.membershipId } });
+    await writeAudit(db, ctx, {
+      action: "survey.status.auto",
+      entityType: "SurveyResponse",
+      entityId: response.id,
+      after: { status: nextStatus, reason: nextStatus === "COMPLETE" ? "all-questions-addressed" : "answer-cleared" },
+    });
+  }
+
+  return { ok: true, completion, scores, status: nextStatus };
 }
 
 export async function setSurveyStatus(input: {

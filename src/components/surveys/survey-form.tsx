@@ -168,13 +168,20 @@ export function SurveyForm({
                 Reopen
               </Button>
             ) : (
-              <Button size="sm" onClick={() => markStatus("COMPLETE")}>
-                Mark complete
+              <Button size="sm" variant="outline" onClick={() => markStatus("COMPLETE")}>
+                Mark complete now
               </Button>
             )
           ) : null}
         </div>
       </div>
+
+      {!readOnly && status !== "COMPLETE" ? (
+        <p className="text-muted-foreground -mt-3 text-xs">
+          This survey completes automatically once every question has an answer or an explicit N/A. Use “Mark complete
+          now” only to finish while leaving some questions blank.
+        </p>
+      ) : null}
 
       {sections.map(([section, sectionQuestions]) => {
         const answered = sectionQuestions.filter((q) => isAnswered(answers[q.id])).length;

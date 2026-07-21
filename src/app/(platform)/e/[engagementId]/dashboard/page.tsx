@@ -336,7 +336,12 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
           <CardTitle className="text-base">4R Framework — Business Value × IT Health</CardTitle>
         </CardHeader>
         <CardContent>
-          <MatrixView apps={matrixApps} optBv={optBv} optIt={optIt} />
+          <MatrixView
+            apps={matrixApps}
+            optBv={optBv}
+            optIt={optIt}
+            caption="In-scope, utilized applications only — the workbook's analysis pool. The Application Portfolio 4R view plots the full inventory, so its counts can be higher."
+          />
         </CardContent>
       </Card>
 

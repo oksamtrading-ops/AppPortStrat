@@ -134,6 +134,7 @@ export default async function ApplicationsPage({
     bv: app.result?.bvScore ?? 0,
     it: app.result?.itScore ?? 0,
     disposition: finalDisposition(app),
+    href: canEdit ? `/e/${engagementId}/applications/${app.id}/edit` : `/e/${engagementId}/applications/${app.id}/view`,
   }));
 
   return (
@@ -215,7 +216,12 @@ export default async function ApplicationsPage({
       </form>
 
       {view === "matrix" ? (
-        <MatrixView apps={matrixApps} optBv={optBv} optIt={optIt} />
+        <MatrixView
+          apps={matrixApps}
+          optBv={optBv}
+          optIt={optIt}
+          caption="Plots every application matching the current filter, in scope or not. The dashboard 4R chart plots only the in-scope, utilized analysis pool — so its counts can be lower."
+        />
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
