@@ -71,6 +71,14 @@ enum SurveyStatus {
   COMPLETE
 }
 
+/// Multi-respondent surveys (MULTI-RESPONDENT-SURVEYS.md): CONSENSUS is the
+/// Lead/Consultant workshop layer (0..1 per app+survey, the finalization
+/// anchor); RESPONDENT rows are one per assigned respondent.
+enum ResponseKind {
+  CONSENSUS
+  RESPONDENT
+}
+
 enum Disposition {
   UNKNOWN
   REDESIGN
@@ -161,6 +169,7 @@ model Membership {
   assignedTasks    Task[] @relation("TaskAssignee")
   createdTasks     Task[] @relation("TaskCreator")
   signOffs         DispositionSignOff[]
+  respondentResponses SurveyResponse[]
 
   @@unique([id, engagementId])
   @@unique([engagementId, email])
@@ -401,14 +410,28 @@ model SurveyResponse {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
+  // Multi-respondent layers (MULTI-RESPONDENT-SURVEYS.md). Kind/respondent
+  // coherence is a DB CHECK; layer uniqueness is enforced by PARTIAL unique
+  // indexes in the migration SQL (Prisma can't express them):
+  //   one CONSENSUS row per (applicationId, templateId)
+  //   one RESPONDENT row per (applicationId, templateId, respondentMembershipId)
+  kind                   ResponseKind @default(CONSENSUS)
+  respondentMembershipId String? // set iff kind = RESPONDENT
+  finalizedAt            DateTime? // consensus row only: the respondent-input lock
+
   engagement  Engagement     @relation(fields: [engagementId], references: [id], onDelete: Cascade)
   application Application    @relation(fields: [applicationId, engagementId], references: [id, engagementId], onDelete: Cascade)
   template    SurveyTemplate @relation(fields: [templateId, engagementId], references: [id, engagementId], onDelete: Cascade)
+  respondent  Membership?    @relation(fields: [respondentMembershipId, engagementId], references: [id, engagementId], onDelete: Cascade)
   answers     Answer[]
 
   @@unique([id, engagementId])
+  // TRANSITIONAL (dropped in rollout step 4 when respondent rows start being
+  // created): deployed code upserts against this index, and current data (one
+  // row per app+survey) satisfies old and new indexes simultaneously.
   @@unique([applicationId, templateId])
   @@index([engagementId])
+  @@index([respondentMembershipId])
 }
 
 model Answer {
@@ -420,6 +443,7 @@ model Answer {
   numericValue Float? // SCORE_1_5 stores 1–5; NUMBER/CURRENCY amounts
   textValue    String? // TEXT/DATE/OPTION
   boolValue    Boolean?
+  updatedAt    DateTime @default(now()) @updatedAt // latest-wins aggregation + respondent report
 
   engagement Engagement     @relation(fields: [engagementId], references: [id], onDelete: Cascade)
   response   SurveyResponse @relation(fields: [responseId, engagementId], references: [id, engagementId], onDelete: Cascade)

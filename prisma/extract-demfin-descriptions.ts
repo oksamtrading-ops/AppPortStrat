@@ -37,12 +37,6 @@ function decodeXml(s: string): string {
     .replace(/&amp;/g, "&");
 }
 
-function colToNumber(col: string): number {
-  let n = 0;
-  for (const ch of col) n = n * 26 + (ch.charCodeAt(0) - 64);
-  return n;
-}
-
 async function loadSheets(): Promise<Map<string, Map<string, Primitive>>> {
   const zip = await JSZip.loadAsync(readFileSync(WORKBOOK));
   const read = (name: string) => zip.file(name)?.async("string");
