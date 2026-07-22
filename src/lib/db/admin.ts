@@ -181,6 +181,27 @@ export async function findMembership(
 }
 
 /**
+ * Finalization state of one app+survey (multi-respondent §6). Admin door by
+ * design: the lock lives on the CONSENSUS row, which respondents cannot read
+ * through their scoped client (own-layer predicate) — yet their writes must be
+ * rejected while it is set. Only the timestamp leaves this function.
+ */
+export async function getSurveyFinalization(
+  engagementId: string,
+  applicationId: string,
+  templateId: string,
+): Promise<Date | null> {
+  return getRawPrisma().$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.engagement_id', ${engagementId}, TRUE)`;
+    const row = await tx.surveyResponse.findFirst({
+      where: { engagementId, applicationId, templateId, kind: "CONSENSUS" },
+      select: { finalizedAt: true },
+    });
+    return row?.finalizedAt ?? null;
+  });
+}
+
+/**
  * Survey completion counts (inventory §3.2, no 2% floor). Admin door by
  * design: Client Respondents may not read QuestionWeighting, but the
  * completion DENOMINATOR (how many questions count) is needed to render

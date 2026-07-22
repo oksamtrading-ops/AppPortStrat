@@ -42,12 +42,20 @@ export default async function SurveyFormPage({
     if (!assignment) notFound();
   }
 
-  const [response, optionLists] = await Promise.all([
-    db.surveyResponse.findUnique({
-      where: { applicationId_templateId: { applicationId: app.id, templateId: template.id } },
+  // Layer-aware load (multi-respondent §3): respondents get their OWN row (the
+  // guard scopes their reads to it); the engagement team edits the CONSENSUS
+  // (workshop) layer; viewers see consensus only (guard S3 predicate).
+  const isRespondent = ctx.role === "CLIENT_RESPONDENT";
+  const [response, optionLists, finalizedAt] = await Promise.all([
+    db.surveyResponse.findFirst({
+      where: isRespondent
+        ? { applicationId: app.id, templateId: template.id }
+        : { applicationId: app.id, templateId: template.id, kind: "CONSENSUS" },
       include: { answers: true },
     }),
     db.optionList.findMany({ include: { items: { orderBy: { orderIndex: "asc" } } } }),
+    // Respondents cannot read the consensus row; the lock crosses via admin door.
+    import("@/lib/db/admin").then((m) => m.getSurveyFinalization(ctx.engagementId, app.id, template.id)),
   ]);
 
   const optionsByKey = new Map(optionLists.map((l) => [l.key, l.items.map((i) => i.value)]));
@@ -95,7 +103,9 @@ export default async function SurveyFormPage({
       initialAnswers={initialAnswers}
       initialStatus={(response?.status ?? "NOT_STARTED") as "NOT_STARTED" | "IN_PROGRESS" | "COMPLETE"}
       initialCompletion={{ answeredCount, applicableCount }}
-      readOnly={ctx.readOnly || ctx.role === "CLIENT_VIEWER"}
+      readOnly={ctx.readOnly || ctx.role === "CLIENT_VIEWER" || (isRespondent && finalizedAt !== null)}
+      finalized={finalizedAt !== null}
+      canFinalize={(ctx.role === "ENGAGEMENT_LEAD" || ctx.role === "CONSULTANT") && !ctx.readOnly}
     />
   );
 }

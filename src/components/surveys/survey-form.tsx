@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { saveAnswer, setSurveyStatus, type SaveAnswerResult } from "@/app/(platform)/e/[engagementId]/surveys/actions";
+import { saveAnswer, setSurveyStatus, setSurveyFinalized, type SaveAnswerResult } from "@/app/(platform)/e/[engagementId]/surveys/actions";
 
 export interface SurveyQuestionView {
   id: string;
@@ -42,6 +42,8 @@ export function SurveyForm({
   initialStatus,
   initialCompletion,
   readOnly,
+  finalized,
+  canFinalize,
 }: {
   engagementId: string;
   applicationId: string;
@@ -55,10 +57,15 @@ export function SurveyForm({
   initialStatus: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETE";
   initialCompletion: { answeredCount: number; applicableCount: number };
   readOnly: boolean;
+  /** The consensus layer's respondent-input lock (multi-respondent §6). */
+  finalized: boolean;
+  /** Lead/Consultant: may Finalize/Reopen the survey. */
+  canFinalize: boolean;
 }) {
   const [answers, setAnswers] = useState<Record<string, AnswerView>>(initialAnswers);
   const [saveStates, setSaveStates] = useState<Record<string, SaveState>>({});
   const [status, setStatus] = useState(initialStatus);
+  const [isFinalized, setIsFinalized] = useState(finalized);
   const [completion, setCompletion] = useState(initialCompletion);
   const [scores, setScores] = useState<{ bv: string; it: string } | null>(null);
   const [, startTransition] = useTransition();
@@ -122,6 +129,19 @@ export function SurveyForm({
     });
   }
 
+  function markFinalized(next: boolean) {
+    startTransition(async () => {
+      try {
+        const result = await setSurveyFinalized({ engagementId, applicationId, templateId, finalized: next });
+        setIsFinalized(result.finalized);
+        if (result.finalized) setStatus("COMPLETE");
+        toast.success(next ? "Survey finalized — respondent input is locked" : "Survey reopened for respondent input");
+      } catch {
+        toast.error("Could not update the finalization");
+      }
+    });
+  }
+
   const financeTotals = useMemo(() => {
     if (!isFinance) return null;
     const bySection = new Map<string, number>();
@@ -162,7 +182,20 @@ export function SurveyForm({
           <span className="text-muted-foreground text-sm tabular-nums">
             {completion.answeredCount}/{completion.applicableCount} ({pct}%)
           </span>
-          {!readOnly ? (
+          {isFinalized ? <Badge>Finalized</Badge> : null}
+          {canFinalize ? (
+            // Survey-level lock (multi-respondent §6) — replaces the manual
+            // per-layer buttons for the team; auto-complete still runs.
+            isFinalized ? (
+              <Button size="sm" variant="outline" onClick={() => markFinalized(false)}>
+                Reopen
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => markFinalized(true)}>
+                Finalize
+              </Button>
+            )
+          ) : !readOnly ? (
             status === "COMPLETE" ? (
               <Button size="sm" variant="outline" onClick={() => markStatus("IN_PROGRESS")}>
                 Reopen
@@ -176,10 +209,18 @@ export function SurveyForm({
         </div>
       </div>
 
+      {isFinalized && !canFinalize ? (
+        <p className="-mt-3 text-xs font-medium text-amber-700">
+          This survey has been finalized by the engagement team — answers are locked. Ask the engagement lead to reopen
+          it if something needs correcting.
+        </p>
+      ) : null}
       {!readOnly && status !== "COMPLETE" ? (
         <p className="text-muted-foreground -mt-3 text-xs">
-          This survey completes automatically once every question has an answer or an explicit N/A. Use “Mark complete
-          now” only to finish while leaving some questions blank.
+          This survey completes automatically once every question has an answer or an explicit N/A.
+          {canFinalize
+            ? " “Finalize” locks respondent input and settles the record."
+            : " Use “Mark complete now” only to finish while leaving some questions blank."}
         </p>
       ) : null}
 

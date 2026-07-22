@@ -200,9 +200,22 @@ function respondentPredicate(model: string, membershipId: string): Record<string
     case "SurveyAssignment":
       return { membershipId };
     case "SurveyResponse":
-      return { application: { assignments: { some: { membershipId } } } };
+      // Own-layer rows ONLY (multi-respondent §7): never other respondents'
+      // responses, never the consensus layer. Assignment stays a conjunct so
+      // removing an assignment revokes access to the row as before.
+      return {
+        kind: "RESPONDENT",
+        respondentMembershipId: membershipId,
+        application: { assignments: { some: { membershipId } } },
+      };
     case "Answer":
-      return { response: { application: { assignments: { some: { membershipId } } } } };
+      return {
+        response: {
+          kind: "RESPONDENT",
+          respondentMembershipId: membershipId,
+          application: { assignments: { some: { membershipId } } },
+        },
+      };
     default:
       return null; // engagement-level reference data (templates, questions, option lists)
   }
@@ -342,6 +355,12 @@ export function guardArgs(model: string, operation: string, rawArgs: unknown, ct
   if (model === "Comment" && ctx.role === "CLIENT_VIEWER") {
     predicate = { ...(predicate ?? {}), internal: false };
   }
+  // Client Viewers see settled values only — never the per-respondent
+  // breakdown (multi-respondent sign-off S3: client-staff answers are sensitive).
+  if (ctx.role === "CLIENT_VIEWER") {
+    if (model === "SurveyResponse") predicate = { ...(predicate ?? {}), kind: "CONSENSUS" };
+    if (model === "Answer") predicate = { ...(predicate ?? {}), response: { kind: "CONSENSUS" } };
+  }
 
   // Inject the tenancy scope (and respondent predicate) into the where clause.
   if (UNIQUE_WHERE_OPS.has(operation)) {
@@ -355,6 +374,11 @@ export function guardArgs(model: string, operation: string, rawArgs: unknown, ct
   // Stamp engagementId onto created rows.
   if (operation === "create") {
     args.data = { ...(args.data as Record<string, unknown>), engagementId: ctx.engagementId };
+    // A respondent can only ever create THEIR OWN respondent-layer response —
+    // stamped here (pure), not trusted from the action's data.
+    if (ctx.role === "CLIENT_RESPONDENT" && model === "SurveyResponse") {
+      args.data = { ...(args.data as Record<string, unknown>), kind: "RESPONDENT", respondentMembershipId: ctx.membershipId };
+    }
   } else if (operation === "createMany" || operation === "createManyAndReturn") {
     const data = args.data;
     args.data = Array.isArray(data)

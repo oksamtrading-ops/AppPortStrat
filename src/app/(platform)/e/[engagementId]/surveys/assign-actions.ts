@@ -54,17 +54,25 @@ export async function assignSurveys(formData: FormData) {
       },
       update: {},
     });
-    // Materialize the response row so the respondent's queue works immediately.
-    await db.surveyResponse.upsert({
-      where: { applicationId_templateId: { applicationId: application.id, templateId: template.id } },
-      create: {
-        engagementId: ctx.engagementId,
-        applicationId: application.id,
-        templateId: template.id,
-        status: "NOT_STARTED",
-      },
-      update: {},
+    // Materialize the respondent's OWN response row (multi-respondent §3) so
+    // their queue works immediately. findFirst+create: layer uniqueness is a
+    // partial index, not a Prisma compound key.
+    const existing = await db.surveyResponse.findFirst({
+      where: { applicationId: application.id, templateId: template.id, kind: "RESPONDENT", respondentMembershipId: member.id },
+      select: { id: true },
     });
+    if (!existing) {
+      await db.surveyResponse.create({
+        data: {
+          engagementId: ctx.engagementId,
+          applicationId: application.id,
+          templateId: template.id,
+          kind: "RESPONDENT",
+          respondentMembershipId: member.id,
+          status: "NOT_STARTED",
+        },
+      });
+    }
   }
 
   await writeAudit(db, ctx, {

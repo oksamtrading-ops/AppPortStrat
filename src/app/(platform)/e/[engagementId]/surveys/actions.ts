@@ -5,7 +5,7 @@ import { requireEngagementContext } from "@/lib/auth/context";
 import { validateAnswer, formatScore } from "@/lib/methodology";
 import { writeAudit } from "@/lib/audit";
 import { recomputeApplication } from "@/lib/recompute";
-import { computeSurveyCompletion, rateLimit } from "@/lib/db/admin";
+import { computeSurveyCompletion, getSurveyFinalization, rateLimit } from "@/lib/db/admin";
 import type { EngagementContext, ScopedDb } from "@/lib/db/scoped";
 
 // Free-text answers are bounded so a respondent cannot persist multi-MB blobs.
@@ -56,6 +56,44 @@ async function respondentMayWriteTemplate(
   return assignment !== null;
 }
 
+/**
+ * Resolve (creating if missing) the response row the CALLER writes to
+ * (multi-respondent §3): respondents own their RESPONDENT-layer row — the
+ * guard scopes their reads to it and stamps kind/respondentMembershipId onto
+ * their creates; Lead/Consultant workshop mode writes the CONSENSUS layer.
+ * Respondent writes are rejected while the survey is finalized (§6).
+ */
+async function resolveWritableResponse(
+  ctx: EngagementContext,
+  db: ScopedDb,
+  applicationId: string,
+  templateId: string,
+): Promise<{ ok: true; response: { id: string; status: string } } | { ok: false; error: string }> {
+  const isRespondent = ctx.role === "CLIENT_RESPONDENT";
+  if (isRespondent && (await getSurveyFinalization(ctx.engagementId, applicationId, templateId))) {
+    return { ok: false, error: "This survey has been finalized — ask the engagement lead to reopen it" };
+  }
+  const layerWhere = isRespondent
+    ? { applicationId, templateId } // guard injects kind=RESPONDENT + own membership
+    : { applicationId, templateId, kind: "CONSENSUS" as const };
+  let response = await db.surveyResponse.findFirst({ where: layerWhere, select: { id: true, status: true } });
+  if (!response) {
+    response = await db.surveyResponse.create({
+      data: {
+        engagementId: ctx.engagementId,
+        applicationId,
+        templateId,
+        status: "IN_PROGRESS",
+        updatedById: ctx.membershipId,
+        // Guard stamps kind=RESPONDENT + respondentMembershipId for respondents.
+        ...(isRespondent ? {} : { kind: "CONSENSUS" as const }),
+      },
+      select: { id: true, status: true },
+    });
+  }
+  return { ok: true, response };
+}
+
 export async function saveAnswer(input: z.infer<typeof saveSchema>): Promise<SaveAnswerResult> {
   const parsed = saveSchema.parse(input);
   const { ctx, db, engagement } = await requireEngagementContext(parsed.engagementId);
@@ -87,22 +125,11 @@ export async function saveAnswer(input: z.infer<typeof saveSchema>): Promise<Sav
     allowedOptions = list?.items.map((i) => i.value);
   }
 
-  // Find or create the response row (respondents pre-verified by the scoped
-  // application read above).
-  let response = await db.surveyResponse.findUnique({
-    where: { applicationId_templateId: { applicationId: application.id, templateId: parsed.templateId } },
-  });
-  if (!response) {
-    response = await db.surveyResponse.create({
-      data: {
-        engagementId: ctx.engagementId,
-        applicationId: application.id,
-        templateId: parsed.templateId,
-        status: "IN_PROGRESS",
-        updatedById: ctx.membershipId,
-      },
-    });
-  }
+  // Layer-aware find-or-create (respondents pre-verified by the scoped
+  // application read above; finalized surveys reject respondent writes).
+  const resolved = await resolveWritableResponse(ctx, db, application.id, parsed.templateId);
+  if (!resolved.ok) return { ok: false, error: resolved.error };
+  const response = resolved.response;
 
   if (parsed.raw === null) {
     // Clear → unanswered = no row (quirk #3 semantics).
@@ -208,22 +235,72 @@ export async function setSurveyStatus(input: {
     throw new Error("This survey is not assigned to you");
   }
 
-  const response = await db.surveyResponse.upsert({
-    where: { applicationId_templateId: { applicationId: application.id, templateId: parsed.templateId } },
-    create: {
-      engagementId: ctx.engagementId,
-      applicationId: application.id,
-      templateId: parsed.templateId,
-      status: parsed.status,
-      updatedById: ctx.membershipId,
-    },
-    update: { status: parsed.status, updatedById: ctx.membershipId },
+  const resolved = await resolveWritableResponse(ctx, db, application.id, parsed.templateId);
+  if (!resolved.ok) throw new Error(resolved.error);
+  await db.surveyResponse.update({
+    where: { id: resolved.response.id },
+    data: { status: parsed.status, updatedById: ctx.membershipId },
   });
   await writeAudit(db, ctx, {
     action: "survey.status",
     entityType: "SurveyResponse",
-    entityId: response.id,
+    entityId: resolved.response.id,
     after: { status: parsed.status },
   });
   return { ok: true as const, status: parsed.status };
+}
+
+const finalizeSchema = z.object({
+  engagementId: z.string().min(1),
+  applicationId: z.string().min(1),
+  templateId: z.string().min(1),
+  finalized: z.boolean(),
+});
+
+/**
+ * Finalize / Reopen an app+survey (multi-respondent §6, Lead/Consultant only).
+ * Finalize upserts the CONSENSUS row (even with zero answers — it is the lock
+ * anchor), stamps finalizedAt, and marks it COMPLETE; while set, every
+ * respondent write is rejected. Reopen clears the lock.
+ */
+export async function setSurveyFinalized(input: z.infer<typeof finalizeSchema>) {
+  const parsed = finalizeSchema.parse(input);
+  const { ctx, db } = await requireEngagementContext(parsed.engagementId);
+  if (ctx.role !== "ENGAGEMENT_LEAD" && ctx.role !== "CONSULTANT") {
+    throw new Error("Only the engagement team can finalize surveys");
+  }
+
+  const application = await db.application.findUnique({ where: { id: parsed.applicationId }, select: { id: true } });
+  if (!application) throw new Error("Not available");
+
+  let consensus = await db.surveyResponse.findFirst({
+    where: { applicationId: application.id, templateId: parsed.templateId, kind: "CONSENSUS" },
+    select: { id: true },
+  });
+  if (!consensus) {
+    consensus = await db.surveyResponse.create({
+      data: {
+        engagementId: ctx.engagementId,
+        applicationId: application.id,
+        templateId: parsed.templateId,
+        kind: "CONSENSUS",
+        status: "NOT_STARTED",
+        updatedById: ctx.membershipId,
+      },
+      select: { id: true },
+    });
+  }
+  await db.surveyResponse.update({
+    where: { id: consensus.id },
+    data: parsed.finalized
+      ? { finalizedAt: new Date(), status: "COMPLETE", updatedById: ctx.membershipId }
+      : { finalizedAt: null, updatedById: ctx.membershipId },
+  });
+  await writeAudit(db, ctx, {
+    action: parsed.finalized ? "survey.finalize" : "survey.reopen",
+    entityType: "SurveyResponse",
+    entityId: consensus.id,
+    after: { applicationId: application.id, templateId: parsed.templateId },
+  });
+  return { ok: true as const, finalized: parsed.finalized };
 }

@@ -426,10 +426,6 @@ model SurveyResponse {
   answers     Answer[]
 
   @@unique([id, engagementId])
-  // TRANSITIONAL (dropped in rollout step 4 when respondent rows start being
-  // created): deployed code upserts against this index, and current data (one
-  // row per app+survey) satisfies old and new indexes simultaneously.
-  @@unique([applicationId, templateId])
   @@index([engagementId])
   @@index([respondentMembershipId])
 }
