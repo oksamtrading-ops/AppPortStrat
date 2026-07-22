@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# internal session handover notes — never commit to this public repo
+HANDOVER.md
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
