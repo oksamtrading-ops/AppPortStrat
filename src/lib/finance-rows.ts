@@ -55,7 +55,7 @@ export async function loadFinanceRows(db: ScopedDb): Promise<FinanceRows> {
         override: { select: { disposition: true } },
         responses: {
           where: { template: { type: "FINANCE" } },
-          select: { answers: { select: { questionId: true, numericValue: true } } },
+          select: { kind: true, answers: { select: { questionId: true, numericValue: true, updatedAt: true } } },
         },
       },
     }),
@@ -65,12 +65,29 @@ export async function loadFinanceRows(db: ScopedDb): Promise<FinanceRows> {
   const grandSections = [...GRAND_TOTAL_SECTIONS];
 
   const rows: AppCostRow[] = apps.map((app) => {
+    // Multi-respondent: a cost figure is a FACT, not an opinion — resolve ONE
+    // value per question (consensus ?? latest respondent answer, S1 latest-wins)
+    // rather than summing every respondent's entry (which would inflate cost).
+    const consensusVal = new Map<string, number>();
+    const respondentLatest = new Map<string, { value: number; at: number }>();
+    for (const r of app.responses) {
+      for (const a of r.answers) {
+        if (a.numericValue === null) continue;
+        if (r.kind === "CONSENSUS") {
+          consensusVal.set(a.questionId, a.numericValue);
+        } else {
+          const prev = respondentLatest.get(a.questionId);
+          const at = a.updatedAt.getTime();
+          if (!prev || at > prev.at) respondentLatest.set(a.questionId, { value: a.numericValue, at });
+        }
+      }
+    }
     const subtotals = new Map<string, number>();
-    for (const answer of app.responses.flatMap((r) => r.answers)) {
-      if (answer.numericValue === null) continue;
-      const section = sectionByQuestion.get(answer.questionId);
+    for (const questionId of new Set([...consensusVal.keys(), ...respondentLatest.keys()])) {
+      const value = consensusVal.has(questionId) ? consensusVal.get(questionId)! : respondentLatest.get(questionId)!.value;
+      const section = sectionByQuestion.get(questionId);
       if (!section || !GRAND_TOTAL_SECTIONS.has(section)) continue;
-      subtotals.set(section, (subtotals.get(section) ?? 0) + answer.numericValue);
+      subtotals.set(section, (subtotals.get(section) ?? 0) + value);
     }
     const grandTotal = grandSections.reduce((sum, s) => sum + (subtotals.get(s) ?? 0), 0);
     return {
