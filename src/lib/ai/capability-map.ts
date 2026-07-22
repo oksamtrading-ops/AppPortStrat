@@ -1,6 +1,11 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { aiConfigured } from "./generate";
+import { sanitizeMappings, type MappingSuggestion } from "./sanitize";
+
+// Type + output sanitizer live in the server-only-free sanitize.ts (unit-tested,
+// client-importable); re-exported here for existing callers.
+export type { MappingSuggestion };
 
 /**
  * Capability auto-mapping: for applications with no capability, suggest the
@@ -8,14 +13,6 @@ import { aiConfigured } from "./generate";
  * apps stay unmapped and are said so). Suggestions only; a consultant accepts
  * per row and accepted rows are written through the scoped client.
  */
-
-export interface MappingSuggestion {
-  appName: string;
-  /** Verbatim capability name from the provided tree, or null when nothing fits. */
-  capability: string | null;
-  confidence: number;
-  rationale: string;
-}
 
 const MAPPING_TOOL: Anthropic.Tool = {
   name: "report_mappings",
@@ -69,16 +66,5 @@ export async function suggestCapabilityMappings(
 
   const call = response.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
   if (!call) throw new Error("Mapping returned no structured result");
-  const raw = (call.input as { mappings?: unknown[] }).mappings ?? [];
-
-  return raw
-    .map((m) => m as Record<string, unknown>)
-    .filter((m) => typeof m.appName === "string")
-    .slice(0, 200)
-    .map((m) => ({
-      appName: String(m.appName).slice(0, 300),
-      capability: m.capability ? String(m.capability).slice(0, 200) : null,
-      confidence: Math.max(0, Math.min(100, Math.round(Number(m.confidence) || 0))),
-      rationale: String(m.rationale ?? "").slice(0, 300),
-    }));
+  return sanitizeMappings((call.input as { mappings?: unknown[] }).mappings ?? []);
 }

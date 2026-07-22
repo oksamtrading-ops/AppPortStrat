@@ -1,6 +1,12 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { aiConfigured } from "./generate";
+import { sanitizeExtraction, type ExtractedApplication, type ExtractionResult } from "./sanitize";
+
+// Types + confidenceTier live in the server-only-free sanitize.ts (so they're
+// unit-testable and client-importable); re-exported here for existing callers.
+export type { ExtractedApplication, ExtractionResult };
+export { confidenceTier } from "./sanitize";
 
 /**
  * AI import extraction: reads architecture diagrams (images), PDFs, or pasted
@@ -9,25 +15,6 @@ import { aiConfigured } from "./generate";
  * review grid where a consultant accepts/edits/rejects each row, and accepted
  * rows flow through the existing import pipeline (validation, dedup, audit).
  */
-
-export interface ExtractedApplication {
-  name: string;
-  description: string | null;
-  /** Capability name from the provided tree, or a proposed new one. */
-  suggestedCapability: string | null;
-  /** True when suggestedCapability matches the engagement's existing tree. */
-  capabilityExists: boolean;
-  /** 0–100: how certain the extraction is that this is a real application. */
-  confidence: number;
-  /** Verbatim snippet or visual location the row was derived from. */
-  evidence: string;
-}
-
-export interface ExtractionResult {
-  applications: ExtractedApplication[];
-  /** Notes on anything ambiguous or skipped (legends, decorations, unclear labels). */
-  notes: string | null;
-}
 
 const EXTRACTION_TOOL: Anthropic.Tool = {
   name: "report_extraction",
@@ -95,25 +82,5 @@ export async function extractPortfolio(source: ExtractionSource, capabilityTree:
 
   const call = response.content.find((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
   if (!call) throw new Error("Extraction returned no structured result");
-  const raw = call.input as { applications?: unknown[]; notes?: string };
-
-  const applications: ExtractedApplication[] = (raw.applications ?? [])
-    .map((a) => a as Record<string, unknown>)
-    .filter((a) => typeof a.name === "string" && (a.name as string).trim().length > 0)
-    .slice(0, 500)
-    .map((a) => ({
-      name: String(a.name).trim().slice(0, 300),
-      description: a.description ? String(a.description).slice(0, 1000) : null,
-      suggestedCapability: a.suggestedCapability ? String(a.suggestedCapability).slice(0, 200) : null,
-      capabilityExists: Boolean(a.capabilityExists),
-      confidence: Math.max(0, Math.min(100, Math.round(Number(a.confidence) || 0))),
-      evidence: String(a.evidence ?? "").slice(0, 500),
-    }));
-
-  return { applications, notes: raw.notes ? String(raw.notes).slice(0, 2000) : null };
-}
-
-/** Review-grid gating: ≥90 pre-checked, 60–89 flagged for review, <60 unchecked. */
-export function confidenceTier(confidence: number): "high" | "medium" | "low" {
-  return confidence >= 90 ? "high" : confidence >= 60 ? "medium" : "low";
+  return sanitizeExtraction(call.input as { applications?: unknown[]; notes?: string });
 }
