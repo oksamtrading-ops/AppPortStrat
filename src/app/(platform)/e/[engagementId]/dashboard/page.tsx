@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireEngagementContext } from "@/lib/auth/context";
 import { THRESHOLD_DEFAULTS } from "@/lib/engagement-defaults";
-import { computeHeatBucket, computeScoreDistribution, DISPOSITION_LABELS, finalDisposition, SCORE_BUCKET_LABELS } from "@/lib/methodology";
+import { computeHeatBucket, computeScoreDistribution, DISPOSITION_COLORS, DISPOSITION_LABELS, finalDisposition, SCORE_BUCKET_LABELS } from "@/lib/methodology";
 import type { Disposition, HeatBucket } from "@/lib/methodology";
 import { formatMoney } from "@/lib/finance";
 import { loadFinanceRows } from "@/lib/finance-rows";
@@ -247,11 +247,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
             <DonutChart
               centerLabel={String(apps.length)}
               slices={[
-                { name: DISPOSITION_LABELS.KEEP_AS_IS, value: quadrants.keepAsIs, color: CHART_COLORS.green },
-                { name: DISPOSITION_LABELS.RETOOL, value: quadrants.retool, color: CHART_COLORS.blue },
-                { name: DISPOSITION_LABELS.REDESIGN, value: quadrants.redesign, color: CHART_COLORS.amber },
-                { name: DISPOSITION_LABELS.TERMINATE, value: quadrants.terminate, color: CHART_COLORS.red },
-                { name: "Unknown", value: quadrants.unknown, color: CHART_COLORS.gray },
+                { name: DISPOSITION_LABELS.KEEP_AS_IS, value: quadrants.keepAsIs, color: DISPOSITION_COLORS.KEEP_AS_IS },
+                { name: DISPOSITION_LABELS.RETOOL, value: quadrants.retool, color: DISPOSITION_COLORS.RETOOL },
+                { name: DISPOSITION_LABELS.REDESIGN, value: quadrants.redesign, color: DISPOSITION_COLORS.REDESIGN },
+                { name: DISPOSITION_LABELS.TERMINATE, value: quadrants.terminate, color: DISPOSITION_COLORS.TERMINATE },
+                { name: "Unknown", value: quadrants.unknown, color: DISPOSITION_COLORS.UNKNOWN },
                 { name: "No Longer Utilized", value: nlu, color: "#6b7280" },
                 { name: "Out of Scope", value: outOfScope, color: "#d1d5db" },
               ]}
@@ -274,11 +274,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
                   centerLabel={formatMoney(finance.totalCost, currency)}
                   formatValue={(n) => formatMoney(n, currency)}
                   slices={[
-                    { name: DISPOSITION_LABELS.KEEP_AS_IS, value: finance.costOf("KEEP_AS_IS"), color: CHART_COLORS.green },
-                    { name: DISPOSITION_LABELS.RETOOL, value: finance.costOf("RETOOL"), color: CHART_COLORS.blue },
-                    { name: DISPOSITION_LABELS.REDESIGN, value: finance.costOf("REDESIGN"), color: CHART_COLORS.amber },
-                    { name: DISPOSITION_LABELS.TERMINATE, value: finance.costOf("TERMINATE"), color: CHART_COLORS.red },
-                    { name: "Unknown", value: finance.costOf("UNKNOWN"), color: CHART_COLORS.gray },
+                    { name: DISPOSITION_LABELS.KEEP_AS_IS, value: finance.costOf("KEEP_AS_IS"), color: DISPOSITION_COLORS.KEEP_AS_IS },
+                    { name: DISPOSITION_LABELS.RETOOL, value: finance.costOf("RETOOL"), color: DISPOSITION_COLORS.RETOOL },
+                    { name: DISPOSITION_LABELS.REDESIGN, value: finance.costOf("REDESIGN"), color: DISPOSITION_COLORS.REDESIGN },
+                    { name: DISPOSITION_LABELS.TERMINATE, value: finance.costOf("TERMINATE"), color: DISPOSITION_COLORS.TERMINATE },
+                    { name: "Unknown", value: finance.costOf("UNKNOWN"), color: DISPOSITION_COLORS.UNKNOWN },
                   ]}
                 />
                 <p className="text-muted-foreground mt-1 text-xs">
@@ -451,11 +451,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
         </CardHeader>
         <CardContent>
           <dl className="grid gap-x-6 gap-y-2 text-sm md:grid-cols-2">
-            <Definition color={CHART_COLORS.green} term="Keep-As-Is" text="High business value on healthy technology — retain and maintain." />
-            <Definition color={CHART_COLORS.blue} term="Re-Tool" text="High business value on weak technology — modernize the platform." />
-            <Definition color={CHART_COLORS.amber} term="Re-Design" text="Healthy technology but low business value — rework or consolidate the functionality." />
-            <Definition color={CHART_COLORS.red} term="Terminate" text="Low value on poor health — candidate for retirement." />
-            <Definition color={CHART_COLORS.gray} term="Unknown" text="Not yet scored — complete the Business and IT surveys to classify." />
+            <Definition color={DISPOSITION_COLORS.KEEP_AS_IS} term="Keep-As-Is" text="High business value on healthy technology — retain and maintain." />
+            <Definition color={DISPOSITION_COLORS.RETOOL} term="Re-Tool" text="High business value on weak technology — modernize the platform." />
+            <Definition color={DISPOSITION_COLORS.REDESIGN} term="Re-Design" text="Healthy technology but low business value — rework or consolidate the functionality." />
+            <Definition color={DISPOSITION_COLORS.TERMINATE} term="Terminate" text="Low value on poor health — candidate for retirement." />
+            <Definition color={DISPOSITION_COLORS.UNKNOWN} term="Unknown" text="Not yet scored — complete the Business and IT surveys to classify." />
             <Definition color="#6b7280" term="NLU" text="No longer utilized — in scope but already unused; grouped with Terminate." />
           </dl>
           <p className="text-muted-foreground mt-3 text-xs">

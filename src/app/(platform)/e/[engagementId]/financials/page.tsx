@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireEngagementContext } from "@/lib/auth/context";
-import { computeFinancialScore, DISPOSITION_LABELS } from "@/lib/methodology";
+import { computeFinancialScore, DISPOSITION_COLORS, DISPOSITION_LABELS } from "@/lib/methodology";
 import type { Disposition } from "@/lib/methodology";
 import { GRAND_TOTAL_SECTIONS, formatMoney } from "@/lib/finance";
 import { loadFinanceRows } from "@/lib/finance-rows";
@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DonutChart, CHART_COLORS } from "@/components/dashboard/charts";
+import { DonutChart } from "@/components/dashboard/charts";
 import { ImportCostRecordsDialog } from "@/components/financials/cost-import-dialog";
 import { clearCostRecords } from "./actions";
 
@@ -103,11 +103,11 @@ export default async function FinancialsPage({ params }: { params: Promise<{ eng
               centerLabel={costed.length ? `${costed.length} costed` : undefined}
               formatValue={(n) => formatMoney(n, currency)}
               slices={[
-                { name: DISPOSITION_LABELS.KEEP_AS_IS, value: costOf("KEEP_AS_IS"), color: CHART_COLORS.green },
-                { name: DISPOSITION_LABELS.RETOOL, value: costOf("RETOOL"), color: CHART_COLORS.blue },
-                { name: DISPOSITION_LABELS.REDESIGN, value: costOf("REDESIGN"), color: CHART_COLORS.amber },
-                { name: DISPOSITION_LABELS.TERMINATE, value: costOf("TERMINATE"), color: CHART_COLORS.red },
-                { name: "Unknown", value: costOf("UNKNOWN"), color: CHART_COLORS.gray },
+                { name: DISPOSITION_LABELS.KEEP_AS_IS, value: costOf("KEEP_AS_IS"), color: DISPOSITION_COLORS.KEEP_AS_IS },
+                { name: DISPOSITION_LABELS.RETOOL, value: costOf("RETOOL"), color: DISPOSITION_COLORS.RETOOL },
+                { name: DISPOSITION_LABELS.REDESIGN, value: costOf("REDESIGN"), color: DISPOSITION_COLORS.REDESIGN },
+                { name: DISPOSITION_LABELS.TERMINATE, value: costOf("TERMINATE"), color: DISPOSITION_COLORS.TERMINATE },
+                { name: "Unknown", value: costOf("UNKNOWN"), color: DISPOSITION_COLORS.UNKNOWN },
               ]}
             />
           </CardContent>

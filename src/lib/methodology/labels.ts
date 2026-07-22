@@ -12,6 +12,21 @@ export const DISPOSITION_LABELS: Record<Disposition, string> = {
   RETOOL: "Re-Tool",
 };
 
+/**
+ * Canonical 4R disposition → hex color: the single source of truth for the
+ * disposition palette in HEX-consuming renderers (SVG donuts/matrix, PPTX).
+ * DOM components that need theme-aware Tailwind utilities (the matrix-view dots'
+ * `UNKNOWN` uses a theme token; the capability board) keep their own class maps,
+ * but those classes are chosen to MIRROR these exact hues — keep them in sync.
+ */
+export const DISPOSITION_COLORS: Record<Disposition, string> = {
+  KEEP_AS_IS: "#16a34a", // green-600
+  RETOOL: "#2563eb", // blue-600
+  REDESIGN: "#f59e0b", // amber-500
+  TERMINATE: "#dc2626", // red-600
+  UNKNOWN: "#9ca3af", // gray-400
+};
+
 /** Industry synonyms shown alongside (Cover-tab mapping, APP-SPEC §4.7). */
 export const DISPOSITION_SYNONYMS: Record<Exclude<Disposition, "UNKNOWN">, string> = {
   KEEP_AS_IS: "Retain",

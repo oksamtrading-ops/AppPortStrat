@@ -62,6 +62,10 @@ function CommentBadge({ engagementId, nodeId, count }: { engagementId: string; n
   );
 }
 
+// Tailwind board-tile mirror of the heat buckets. These are intentionally
+// softer than the workbook's exact HEAT_COLORS hex (used by the heat grid /
+// PPTX); keep the mapping (which bucket is red/yellow/green) aligned with
+// lib/methodology HEAT_COLORS.
 const BUCKET_DOT: Record<Exclude<HeatBucketView, null>, string> = {
   TERMINATE: "bg-red-600",
   RETOOL_REDESIGN: "bg-yellow-400",

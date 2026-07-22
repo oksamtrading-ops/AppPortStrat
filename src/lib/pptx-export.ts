@@ -1,7 +1,7 @@
 // NOTE: no "server-only" marker — exercised by verification scripts; only route handlers call this in the app.
 import PptxGenJS from "pptxgenjs";
 import type { ScopedDb } from "@/lib/db/scoped";
-import { DISPOSITION_LABELS, HEAT_COLORS, computeHeatBucket, finalDisposition, formatScore } from "@/lib/methodology";
+import { DISPOSITION_COLORS, DISPOSITION_LABELS, HEAT_COLORS, computeHeatBucket, finalDisposition, formatScore } from "@/lib/methodology";
 import type { Disposition } from "@/lib/methodology";
 import { THRESHOLD_DEFAULTS } from "@/lib/engagement-defaults";
 import { loadCapabilityTallies } from "@/lib/capability-heat";
@@ -17,13 +17,11 @@ const BRAND = "86BC25";
 const DARK = "1F2937";
 const GRAY = "6B7280";
 
-const DISPOSITION_HEX: Record<Disposition, string> = {
-  KEEP_AS_IS: "16A34A",
-  RETOOL: "2563EB",
-  REDESIGN: "F59E0B",
-  TERMINATE: "DC2626",
-  UNKNOWN: "9CA3AF",
-};
+// PptxGenJS wants bare RRGGBB (no leading #). Derived from the canonical
+// disposition palette so the hues never drift from the on-screen charts.
+const DISPOSITION_HEX = Object.fromEntries(
+  Object.entries(DISPOSITION_COLORS).map(([k, v]) => [k, v.slice(1).toUpperCase()]),
+) as Record<Disposition, string>;
 
 export async function buildEngagementDeck(
   db: ScopedDb,

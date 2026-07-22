@@ -14,6 +14,9 @@ export interface MatrixApp {
   href?: string;
 }
 
+// Theme-aware Tailwind mirror of DISPOSITION_COLORS (UNKNOWN uses a theme token
+// rather than a fixed hex, which is why this stays a class map). Keep the hues
+// in sync with lib/methodology DISPOSITION_COLORS.
 const DOT: Record<Disposition, string> = {
   KEEP_AS_IS: "bg-green-600",
   RETOOL: "bg-blue-600",
