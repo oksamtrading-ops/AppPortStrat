@@ -1,11 +1,13 @@
 /**
- * Pure sanitizers for AI tool-call output — NO "server-only" marker so they are
- * unit-testable and safe to reuse client-side. Model output is UNTRUSTED: these
- * coerce every field to its type, clamp lengths and numeric ranges, drop
- * nameless rows, and cap the row count, so a compromised or confused model can't
- * inject oversized/typed-wrong data into the review grids. The extract.ts /
- * capability-map.ts modules keep their server-only API-call code and delegate
- * here for the post-response shaping.
+ * Pure sanitizers and data-shaping helpers for the AI modules — NO "server-only"
+ * marker so they are unit-testable and safe to reuse client-side. Model output is
+ * UNTRUSTED: the sanitize* helpers coerce every field to its type, clamp lengths
+ * and numeric ranges, drop malformed rows, and cap the row count, so a compromised
+ * or confused model can't inject oversized/typed-wrong data into the review grids
+ * (sanitizeFindings additionally enforces grounding + the evidence requirement).
+ * The to* helpers shape DB rows into the bundles the prompts reason over. The
+ * extract / capability-map / quality modules keep their server-only API-call code
+ * and delegate here for the pre-/post-response shaping.
  */
 
 export interface ExtractedApplication {
@@ -33,6 +35,32 @@ export interface MappingSuggestion {
   capability: string | null;
   confidence: number;
   rationale: string;
+}
+
+export interface QualityFinding {
+  type: "straight-lining" | "contradiction" | "possible-duplicate" | "other";
+  appName: string;
+  finding: string;
+  evidence: string;
+  severity: "high" | "medium" | "low";
+}
+
+export interface QualityAppData {
+  name: string;
+  description: string | null;
+  /** Per survey template: the 1-5 score values in question order. */
+  scores: Record<string, number[]>;
+  comments: string[];
+}
+
+/** The application rows quality.ts reads from the DB, before shaping. */
+export interface RawQualityApp {
+  name: string;
+  description: string | null;
+  responses: {
+    template: { name: string };
+    answers: { isNA: boolean; numericValue: number | null; textValue: string | null; question: { answerKind: string } }[];
+  }[];
 }
 
 /** Clamp to an integer in [0, 100]; non-numbers become 0. */
@@ -77,4 +105,53 @@ export function sanitizeMappings(raw: unknown[]): MappingSuggestion[] {
 /** Review-grid gating: ≥90 pre-checked, 60–89 flagged for review, <60 unchecked. */
 export function confidenceTier(confidence: number): "high" | "medium" | "low" {
   return confidence >= 90 ? "high" : confidence >= 60 ? "medium" : "low";
+}
+
+const FINDING_TYPES = new Set(["straight-lining", "contradiction", "possible-duplicate", "other"]);
+const SEVERITIES = new Set(["high", "medium", "low"]);
+const MAX_FINDINGS = 100;
+
+/**
+ * Shape the report_findings tool output into safe QualityFindings. Beyond the
+ * usual clamps this enforces two grounding rules in code, not just the prompt:
+ *  - a finding's appName MUST be one of the apps we actually sent (drops
+ *    hallucinated findings about apps that don't exist in the engagement);
+ *  - a finding with no finding text OR no evidence is discarded ("no finding
+ *    without evidence").
+ */
+export function sanitizeFindings(raw: unknown[], appNames: Set<string>): QualityFinding[] {
+  return raw
+    .map((f) => f as Record<string, unknown>)
+    .filter((f) => typeof f.appName === "string" && appNames.has(f.appName as string))
+    .slice(0, MAX_FINDINGS)
+    .map((f) => ({
+      type: (FINDING_TYPES.has(String(f.type)) ? String(f.type) : "other") as QualityFinding["type"],
+      appName: String(f.appName),
+      finding: String(f.finding ?? "").slice(0, 500),
+      evidence: String(f.evidence ?? "").slice(0, 500),
+      severity: (SEVERITIES.has(String(f.severity)) ? String(f.severity) : "low") as QualityFinding["severity"],
+    }))
+    .filter((f) => f.finding && f.evidence);
+}
+
+/**
+ * Shape raw application+response rows into the per-app score/comment bundle the
+ * quality copilot reasons over: 1-5 scores grouped by survey template (N/A and
+ * null dropped), free-text comments collected (trimmed, length-clamped, capped).
+ */
+export function toQualityAppData(apps: RawQualityApp[]): QualityAppData[] {
+  return apps.map((a) => {
+    const scores: Record<string, number[]> = {};
+    const comments: string[] = [];
+    for (const r of a.responses) {
+      for (const ans of r.answers) {
+        if (ans.question.answerKind === "SCORE_1_5" && !ans.isNA && ans.numericValue != null) {
+          (scores[r.template.name] ??= []).push(ans.numericValue);
+        } else if (ans.question.answerKind === "TEXT" && ans.textValue?.trim()) {
+          comments.push(ans.textValue.trim().slice(0, 300));
+        }
+      }
+    }
+    return { name: a.name, description: a.description?.slice(0, 300) ?? null, scores, comments: comments.slice(0, 10) };
+  });
 }

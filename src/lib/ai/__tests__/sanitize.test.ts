@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeExtraction, sanitizeMappings, confidenceTier } from "../sanitize";
+import { sanitizeExtraction, sanitizeMappings, confidenceTier, sanitizeFindings, toQualityAppData, type RawQualityApp } from "../sanitize";
 
 /**
  * AI tool-call output is UNTRUSTED (a prompt-injected or confused model can emit
@@ -103,5 +103,102 @@ describe("confidenceTier", () => {
     expect(confidenceTier(60)).toBe("medium");
     expect(confidenceTier(59)).toBe("low");
     expect(confidenceTier(0)).toBe("low");
+  });
+});
+
+describe("sanitizeFindings", () => {
+  const names = new Set(["Real App", "Other App"]);
+
+  it("drops findings about apps not in the input (hallucination guard)", () => {
+    const out = sanitizeFindings(
+      [
+        { type: "straight-lining", appName: "Real App", finding: "all 3s", evidence: "3,3,3", severity: "high" },
+        { type: "contradiction", appName: "Ghost App", finding: "invented", evidence: "none", severity: "high" },
+      ],
+      names,
+    );
+    expect(out.map((f) => f.appName)).toEqual(["Real App"]);
+  });
+
+  it("discards findings with no finding text or no evidence", () => {
+    const out = sanitizeFindings(
+      [
+        { type: "other", appName: "Real App", finding: "stated", evidence: "", severity: "low" },
+        { type: "other", appName: "Real App", finding: "", evidence: "present", severity: "low" },
+        { type: "other", appName: "Real App", finding: "kept", evidence: "here", severity: "low" },
+      ],
+      names,
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0].finding).toBe("kept");
+  });
+
+  it("coerces unknown type -> 'other' and unknown severity -> 'low', clamps length, caps at 100", () => {
+    const one = sanitizeFindings(
+      [{ type: "nonsense", appName: "Other App", finding: "F".repeat(600), evidence: "E", severity: "critical" }],
+      names,
+    );
+    expect(one[0].type).toBe("other");
+    expect(one[0].severity).toBe("low");
+    expect(one[0].finding).toHaveLength(500);
+
+    const many = Array.from({ length: 150 }, () => ({ type: "other", appName: "Real App", finding: "f", evidence: "e", severity: "low" }));
+    expect(sanitizeFindings(many, names)).toHaveLength(100);
+  });
+});
+
+describe("toQualityAppData", () => {
+  const raw: RawQualityApp[] = [
+    {
+      name: "App One",
+      description: "D".repeat(400),
+      responses: [
+        {
+          template: { name: "IT Health" },
+          answers: [
+            { isNA: false, numericValue: 4, textValue: null, question: { answerKind: "SCORE_1_5" } },
+            { isNA: true, numericValue: 5, textValue: null, question: { answerKind: "SCORE_1_5" } }, // N/A -> skipped
+            { isNA: false, numericValue: null, textValue: null, question: { answerKind: "SCORE_1_5" } }, // null -> skipped
+            { isNA: false, numericValue: null, textValue: "  needs work  ", question: { answerKind: "TEXT" } },
+          ],
+        },
+        {
+          template: { name: "Business Value" },
+          answers: [{ isNA: false, numericValue: 2, textValue: null, question: { answerKind: "SCORE_1_5" } }],
+        },
+      ],
+    },
+  ];
+
+  it("groups 1-5 scores by template, dropping N/A and null", () => {
+    const out = toQualityAppData(raw);
+    expect(out[0].scores).toEqual({ "IT Health": [4], "Business Value": [2] });
+  });
+
+  it("collects trimmed text comments and clamps the description", () => {
+    const out = toQualityAppData(raw);
+    expect(out[0].comments).toEqual(["needs work"]);
+    expect(out[0].description).toHaveLength(300);
+  });
+
+  it("caps comments at 10", () => {
+    const many: RawQualityApp[] = [
+      {
+        name: "Wordy",
+        description: null,
+        responses: [
+          {
+            template: { name: "IT Health" },
+            answers: Array.from({ length: 15 }, (_, i) => ({
+              isNA: false,
+              numericValue: null,
+              textValue: `comment ${i}`,
+              question: { answerKind: "TEXT" },
+            })),
+          },
+        ],
+      },
+    ];
+    expect(toQualityAppData(many)[0].comments).toHaveLength(10);
   });
 });
