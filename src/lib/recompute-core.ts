@@ -23,7 +23,11 @@ export interface SnapshotRows {
     /** Σ of computed Finance subtotals, when cost data exists (Phase 3+). */
     financeGrandTotal?: number | null;
   }>;
-  /** One row per stored Answer on a scored question. Unanswered = NO row. */
+  /**
+   * AT MOST one row per (application, question) — multi-respondent answer sets
+   * are already reduced by aggregateScoredAnswers (consensus ?? respondent
+   * mean) before reaching this seam. Unanswered = NO row (quirk #3).
+   */
   answers: Array<{
     applicationId: string;
     code: string;
@@ -36,8 +40,11 @@ export interface SnapshotRows {
 function toAnswerValue(row: { isNA: boolean; numericValue: number | null }): AnswerValue | null {
   if (row.isNA) return "NA";
   const v = row.numericValue;
-  if (v === 1 || v === 2 || v === 3 || v === 4 || v === 5) return v;
-  return null; // out-of-domain value — treated as unanswered rather than corrupting a score
+  // Raw answers are integers 1–5; multi-respondent MEANS (aggregate.ts) are
+  // fractional within the same closed range. Anything else is out-of-domain —
+  // treated as unanswered rather than corrupting a score.
+  if (typeof v === "number" && Number.isFinite(v) && v >= 1 && v <= 5) return v;
+  return null;
 }
 
 export function rowsToSnapshot(rows: SnapshotRows): PortfolioSnapshot {

@@ -10,8 +10,14 @@ export type QuestionCode = string;
 
 export type Score15 = 1 | 2 | 3 | 4 | 5;
 
-/** An answer to a scored question: 1–5, explicit N/A, or absent (unanswered). */
-export type AnswerValue = Score15 | "NA";
+/**
+ * A per-question value entering the scorer: numeric in [1, 5], explicit N/A,
+ * or absent (unanswered). Raw single answers are integers 1–5 (write-validated
+ * by validateAnswer); multi-respondent AGGREGATION (aggregate.ts) can produce
+ * fractional means (e.g. 3.5) — the scorer's weighted arithmetic is unchanged
+ * by fractional inputs (family scores were always fractional).
+ */
+export type AnswerValue = number | "NA";
 
 export type Disposition = "UNKNOWN" | "REDESIGN" | "KEEP_AS_IS" | "TERMINATE" | "RETOOL";
 

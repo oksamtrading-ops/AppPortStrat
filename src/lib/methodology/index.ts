@@ -9,4 +9,5 @@ export * from "./stats";
 export * from "./dashboard";
 export * from "./capability";
 export * from "./answers";
+export * from "./aggregate";
 export * from "./portfolio";

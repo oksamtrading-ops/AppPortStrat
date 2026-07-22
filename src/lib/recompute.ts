@@ -8,7 +8,7 @@
  * Both: scoped reads → pure engine (rowsToSnapshot → computePortfolio) →
  * short write-only transaction via the admin door.
  */
-import { computePortfolio } from "@/lib/methodology";
+import { aggregateScoredAnswers, computePortfolio } from "@/lib/methodology";
 import { THRESHOLD_DEFAULTS } from "@/lib/engagement-defaults";
 import { rowsToSnapshot, type SnapshotRows } from "./recompute-core";
 import { persistPortfolioResults } from "./db/admin";
@@ -59,7 +59,7 @@ async function loadSnapshotRows(
         isNA: true,
         numericValue: true,
         question: { select: { code: true, scoreFamily: true } },
-        response: { select: { applicationId: true } },
+        response: { select: { applicationId: true, kind: true } },
       },
     }),
   ]);
@@ -91,13 +91,18 @@ async function loadSnapshotRows(
             }
           : null,
     })),
-    answers: answerRows.map((a) => ({
-      applicationId: a.response.applicationId,
-      code: a.question.code,
-      scoreFamily: a.question.scoreFamily,
-      isNA: a.isNA,
-      numericValue: a.numericValue,
-    })),
+    // Multi-respondent reduction (consensus ?? respondent mean) BEFORE the
+    // snapshot seam — the scorer and golden tests run unchanged on the output.
+    answers: aggregateScoredAnswers(
+      answerRows.map((a) => ({
+        applicationId: a.response.applicationId,
+        code: a.question.code,
+        scoreFamily: a.question.scoreFamily,
+        isNA: a.isNA,
+        numericValue: a.numericValue,
+        kind: a.response.kind,
+      })),
+    ),
   };
 }
 
