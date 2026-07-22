@@ -3,6 +3,7 @@ import { requireEngagementContext } from "@/lib/auth/context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TYPE_SLUGS } from "@/lib/survey-slugs";
+import { deriveSurveyStatus } from "@/lib/survey-status";
 import { Button } from "@/components/ui/button";
 import { assignSurveys, removeAssignment } from "./assign-actions";
 
@@ -21,9 +22,22 @@ export default async function SurveysPage({
 
   if (ctx.role === "CLIENT_RESPONDENT") {
     // The scoped client confines this query to the respondent's assignments.
+    // The nested `responses` include is NOT predicate-scoped by the guard, so
+    // it is explicitly filtered to the respondent's OWN layer row — otherwise a
+    // respondent could see other respondents' / the consensus status.
     const assignments = await db.surveyAssignment.findMany({
       include: {
-        application: { select: { id: true, name: true, acronym: true, responses: { select: { templateId: true, status: true } } } },
+        application: {
+          select: {
+            id: true,
+            name: true,
+            acronym: true,
+            responses: {
+              where: { kind: "RESPONDENT", respondentMembershipId: ctx.membershipId },
+              select: { templateId: true, status: true },
+            },
+          },
+        },
         template: { select: { id: true, name: true, type: true } },
       },
       orderBy: { createdAt: "asc" },
@@ -96,11 +110,20 @@ export default async function SurveysPage({
             id: true,
             name: true,
             appNumber: true,
-            responses: { where: { templateId: focusTemplate.id }, select: { status: true } },
+            responses: {
+              where: { templateId: focusTemplate.id },
+              select: { kind: true, status: true, finalizedAt: true },
+            },
           },
         })
       )
-        .map((a) => ({ id: a.id, name: a.name, appNumber: a.appNumber, status: a.responses[0]?.status ?? "NOT_STARTED" }))
+        .map((a) => ({
+          id: a.id,
+          name: a.name,
+          appNumber: a.appNumber,
+          // Derived across the layers (consensus ?? all-respondents-complete).
+          status: deriveSurveyStatus(a.responses.map((r) => ({ kind: r.kind, status: r.status, finalized: r.finalizedAt != null }))),
+        }))
         .filter((a) => (outstandingOnly ? a.status !== "COMPLETE" : true))
     : null;
 

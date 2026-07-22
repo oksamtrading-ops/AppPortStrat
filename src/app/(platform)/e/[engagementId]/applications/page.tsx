@@ -5,6 +5,7 @@ import { THRESHOLD_DEFAULTS } from "@/lib/engagement-defaults";
 import { DISPOSITION_LABELS, FILTER_LABELS, finalDisposition, formatScore, computeColumnStats } from "@/lib/methodology";
 import type { Disposition, FilterHit } from "@/lib/methodology";
 import { cn } from "@/lib/utils";
+import { deriveStatusByKey } from "@/lib/survey-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pill, CountChip, type PillColor } from "@/components/ui/pill";
@@ -69,7 +70,7 @@ export default async function ApplicationsPage({
         result: true,
         override: true,
         signOff: { select: { disposition: true } },
-        responses: { select: { status: true } },
+        responses: { select: { templateId: true, status: true, kind: true, finalizedAt: true } },
         _count: { select: { commentThreads: true } },
       },
     }),
@@ -262,7 +263,14 @@ export default async function ApplicationsPage({
                 const result = app.result;
                 const computed = (result?.computedDisposition ?? "UNKNOWN") as Disposition;
                 const final = finalDisposition(app);
-                const complete = app.responses.filter((r) => r.status === "COMPLETE").length;
+                // Surveys complete for this app = templates whose DERIVED status
+                // (consensus/respondent layers collapsed) is COMPLETE.
+                const complete = [
+                  ...deriveStatusByKey(
+                    app.responses.map((r) => ({ key: r.templateId, kind: r.kind, status: r.status, finalized: r.finalizedAt != null })),
+                    (r) => r.key,
+                  ).values(),
+                ].filter((s) => s === "COMPLETE").length;
                 return (
                   <TableRow key={app.id}>
                     <TableCell className="text-muted-foreground tabular-nums">{app.appNumber}</TableCell>

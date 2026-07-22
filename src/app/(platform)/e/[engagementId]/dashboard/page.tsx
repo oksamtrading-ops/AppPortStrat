@@ -6,6 +6,7 @@ import { computeHeatBucket, computeScoreDistribution, DISPOSITION_COLORS, DISPOS
 import type { Disposition, HeatBucket } from "@/lib/methodology";
 import { formatMoney } from "@/lib/finance";
 import { loadFinanceRows } from "@/lib/finance-rows";
+import { deriveStatusByKey } from "@/lib/survey-status";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Pill } from "@/components/ui/pill";
 import { BucketBars, CHART_COLORS, DonutChart } from "@/components/dashboard/charts";
@@ -38,7 +39,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
       orderBy: { name: "asc" },
     }),
     db.surveyTemplate.findMany({ where: { questions: { some: {} } }, orderBy: { type: "asc" }, select: { id: true, name: true } }),
-    db.surveyResponse.findMany({ select: { templateId: true, status: true, application: { select: { inScope: true } } } }),
+    db.surveyResponse.findMany({
+      select: { applicationId: true, templateId: true, status: true, kind: true, finalizedAt: true, application: { select: { inScope: true } } },
+    }),
     db.thresholdConfig.findFirst(),
     db.capabilityNode.findMany({ select: { id: true, parentId: true, level: true, name: true, isPlaceholder: true } }),
     loadFinanceRows(db),
@@ -77,7 +80,15 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
   const bvDistribution = computeScoreDistribution(pool.map((a) => a.result?.bvScore ?? 0));
   const itDistribution = computeScoreDistribution(pool.map((a) => a.result?.itScore ?? 0));
 
-  const inScopeResponses = responses.filter((r) => r.application.inScope);
+  // Multi-respondent: collapse the per-respondent + consensus rows to ONE
+  // derived status per (app, survey) so the confidence card counts apps, not rows.
+  const inScopeAppIds = apps.filter((a) => a.inScope).map((a) => a.id);
+  const statusByAppTpl = deriveStatusByKey(
+    responses
+      .filter((r) => r.application.inScope)
+      .map((r) => ({ key: `${r.applicationId}:${r.templateId}`, kind: r.kind, status: r.status, finalized: r.finalizedAt != null })),
+    (r) => r.key,
+  );
 
   // Capability hotspots: aggregate the pool per L1 ancestor and bucket with
   // the workbook heat rule. Red/yellow L1s surface here; the full (L1, L2)
@@ -299,8 +310,13 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
           <CardContent>
             <div className="space-y-3">
               {templates.map((t) => {
-                const complete = inScopeResponses.filter((r) => r.templateId === t.id && r.status === "COMPLETE").length;
-                const partial = inScopeResponses.filter((r) => r.templateId === t.id && r.status === "IN_PROGRESS").length;
+                let complete = 0;
+                let partial = 0;
+                for (const appId of inScopeAppIds) {
+                  const s = statusByAppTpl.get(`${appId}:${t.id}`) ?? "NOT_STARTED";
+                  if (s === "COMPLETE") complete++;
+                  else if (s === "IN_PROGRESS") partial++;
+                }
                 const missing = Math.max(0, inScope - complete - partial);
                 const canDrillToSurveys = ctx.role === "ENGAGEMENT_LEAD" || ctx.role === "CONSULTANT";
                 const bar = (

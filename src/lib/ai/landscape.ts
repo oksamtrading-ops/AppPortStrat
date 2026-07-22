@@ -5,6 +5,7 @@ import { THRESHOLD_DEFAULTS } from "@/lib/engagement-defaults";
 import { computeHeatBucket } from "@/lib/methodology";
 import { formatMoney } from "@/lib/finance";
 import { loadFinanceRows } from "@/lib/finance-rows";
+import { deriveStatusByKey } from "@/lib/survey-status";
 
 /**
  * The grounding bundle for AI narratives: every figure the model may use,
@@ -36,13 +37,15 @@ export async function loadLandscapeBundle(
   const [apps, templates, responses, thresholds, nodes, finance] = await Promise.all([
     db.application.findMany({
       select: {
-        name: true, inScope: true, isUtilized: true, missionCritical: true, capabilityNodeId: true,
+        id: true, name: true, inScope: true, isUtilized: true, missionCritical: true, capabilityNodeId: true,
         result: { select: { computedDisposition: true, veryLowBv: true, veryLowIt: true } },
         override: { select: { disposition: true } },
       },
     }),
     db.surveyTemplate.findMany({ where: { questions: { some: {} } }, select: { id: true, name: true } }),
-    db.surveyResponse.findMany({ select: { templateId: true, status: true, application: { select: { inScope: true } } } }),
+    db.surveyResponse.findMany({
+      select: { applicationId: true, templateId: true, status: true, kind: true, finalizedAt: true, application: { select: { inScope: true } } },
+    }),
     db.thresholdConfig.findFirst(),
     db.capabilityNode.findMany({ select: { id: true, parentId: true, level: true, name: true, isPlaceholder: true } }),
     loadFinanceRows(db),
@@ -83,10 +86,22 @@ export async function loadLandscapeBundle(
 
   const inScope = apps.filter((a) => a.inScope).length;
   const scoredCount = pool.length - quadrants.unknown;
-  const inScopeResponses = responses.filter((r) => r.application.inScope);
+  // Multi-respondent: one derived status per (app, survey), not per response row.
+  const inScopeAppIds = apps.filter((a) => a.inScope).map((a) => a.id);
+  const statusByAppTpl = deriveStatusByKey(
+    responses
+      .filter((r) => r.application.inScope)
+      .map((r) => ({ key: `${r.applicationId}:${r.templateId}`, kind: r.kind, status: r.status, finalized: r.finalizedAt != null })),
+    (r) => r.key,
+  );
   const completion = templates.map((t) => {
-    const complete = inScopeResponses.filter((r) => r.templateId === t.id && r.status === "COMPLETE").length;
-    const partial = inScopeResponses.filter((r) => r.templateId === t.id && r.status === "IN_PROGRESS").length;
+    let complete = 0;
+    let partial = 0;
+    for (const appId of inScopeAppIds) {
+      const s = statusByAppTpl.get(`${appId}:${t.id}`) ?? "NOT_STARTED";
+      if (s === "COMPLETE") complete++;
+      else if (s === "IN_PROGRESS") partial++;
+    }
     return { survey: t.name, complete, partial, missing: Math.max(0, inScope - complete - partial) };
   });
 
