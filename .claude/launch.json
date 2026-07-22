@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "aps-devauth",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:auth"],
+      "port": 3001
     }
   ]
 }

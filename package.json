@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:auth": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY= CLERK_SECRET_KEY= next dev -p 3001",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
