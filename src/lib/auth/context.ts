@@ -30,8 +30,14 @@ export const requireEngagementContext = cache(
     const engagement = await getEngagementById(engagementId);
 
     // Membership: role authority in dev mode; FK anchor in both modes.
+    // In Clerk mode the email fallback may only resolve an UNCLAIMED row, so a
+    // session can never adopt another user's membership (findMembership docs).
     let membership = engagement
-      ? await findMembership(engagement.id, { clerkUserId: session.userId, email: session.email })
+      ? await findMembership(
+          engagement.id,
+          { clerkUserId: session.userId, email: session.email },
+          { emailMatchesUnclaimedOnly: session.mode === "clerk" },
+        )
       : null;
 
     const decision = evaluateAccess({

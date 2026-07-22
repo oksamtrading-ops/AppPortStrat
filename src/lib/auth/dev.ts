@@ -1,26 +1,17 @@
 /**
- * Dev-mode auth: a signed-cookie user switcher over seeded identities.
- * Statically unreachable in Clerk mode — session.ts only dynamic-imports this
- * module after getAuthMode() returned "dev", which is impossible in a
- * deployed environment (see mode.ts).
+ * Dev-mode auth: signed-cookie minting/verification over the seeded identities.
+ *
+ * The secret-bearing code here is reached ONLY through the dynamic imports in
+ * session.ts and dev-actions.ts, which run after getAuthMode() returned "dev"
+ * — impossible in a deployed environment (see mode.ts). The static identity
+ * list the switcher UI renders lives in dev-users.ts precisely so importing it
+ * does not pull this module into the production bundle. DEV_USERS is re-exported
+ * here for the (dev-only, dynamic) dev-actions.ts importer.
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { DEV_USERS, type DevUser } from "./dev-users";
 
-export interface DevUser {
-  id: string; // becomes Membership.clerkUserId, "dev:" namespace
-  email: string;
-  displayName: string;
-  isPlatformAdmin: boolean;
-}
-
-/** Seeded by prisma/seed-dev.ts as memberships of the sample engagement. */
-export const DEV_USERS: readonly DevUser[] = [
-  { id: "dev:admin", email: "admin@dev.local", displayName: "Dev Platform Admin", isPlatformAdmin: true },
-  { id: "dev:lead", email: "lead@dev.local", displayName: "Dev Engagement Lead", isPlatformAdmin: false },
-  { id: "dev:consultant", email: "consultant@dev.local", displayName: "Dev Consultant", isPlatformAdmin: false },
-  { id: "dev:respondent", email: "respondent@dev.local", displayName: "Dev Client Respondent", isPlatformAdmin: false },
-  { id: "dev:viewer", email: "viewer@dev.local", displayName: "Dev Client Viewer", isPlatformAdmin: false },
-];
+export { DEV_USERS, type DevUser };
 
 export const DEV_COOKIE_NAME = "aps-dev-user";
 

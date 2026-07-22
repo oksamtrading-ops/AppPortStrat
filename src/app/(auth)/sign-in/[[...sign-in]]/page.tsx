@@ -1,6 +1,6 @@
 import { SignIn } from "@clerk/nextjs";
 import { getAuthMode } from "@/lib/auth/mode";
-import { DEV_USERS } from "@/lib/auth/dev";
+import { DEV_USERS } from "@/lib/auth/dev-users";
 import { switchDevUser } from "@/lib/auth/dev-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

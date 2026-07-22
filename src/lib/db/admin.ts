@@ -147,13 +147,37 @@ export async function listMembershipsForUser(params: { clerkUserId?: string | nu
   });
 }
 
-/** Membership within one engagement for context resolution. */
-export async function findMembership(engagementId: string, params: { clerkUserId?: string | null; email?: string | null }) {
-  const or: Array<Record<string, string>> = [];
-  if (params.clerkUserId) or.push({ clerkUserId: params.clerkUserId });
-  if (params.email) or.push({ email: params.email });
-  if (or.length === 0) return null;
-  return adminDb().membership.findFirst({ where: { engagementId, OR: or } });
+/**
+ * Membership within one engagement for context resolution.
+ *
+ * `clerkUserId` always takes precedence — it is the authoritative identity.
+ * The `email` fallback exists so a freshly signed-up invitee can claim the
+ * pending row created for their invite (its `clerkUserId` is still null). In
+ * Clerk mode (`emailMatchesUnclaimedOnly`) that fallback is restricted to
+ * UNCLAIMED rows, so a session email can never resolve to — and then adopt
+ * (see context.ts) — a row already bound to a DIFFERENT user. This closes the
+ * row-adoption attribution hole from the security review; the same rule must
+ * hold before the membership webhook is ever enabled. Dev mode keeps the plain
+ * email match (seeded rows are matched by their `dev:` clerkUserId anyway).
+ */
+export async function findMembership(
+  engagementId: string,
+  params: { clerkUserId?: string | null; email?: string | null },
+  opts: { emailMatchesUnclaimedOnly?: boolean } = {},
+) {
+  const db = adminDb();
+  if (params.clerkUserId) {
+    const byId = await db.membership.findFirst({ where: { engagementId, clerkUserId: params.clerkUserId } });
+    if (byId) return byId;
+  }
+  if (params.email) {
+    return db.membership.findFirst({
+      where: opts.emailMatchesUnclaimedOnly
+        ? { engagementId, email: params.email, clerkUserId: null }
+        : { engagementId, email: params.email },
+    });
+  }
+  return null;
 }
 
 /**

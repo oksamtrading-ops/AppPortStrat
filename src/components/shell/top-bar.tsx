@@ -2,7 +2,7 @@ import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import type { Session } from "@/lib/auth/session";
 import { devSignOut, switchDevUser } from "@/lib/auth/dev-actions";
-import { DEV_USERS } from "@/lib/auth/dev";
+import { DEV_USERS } from "@/lib/auth/dev-users";
 import { Badge } from "@/components/ui/badge";
 import { NotificationBell, type NotificationView } from "./notification-bell";
 import { Button } from "@/components/ui/button";

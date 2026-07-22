@@ -27,7 +27,10 @@ function buildCsp(nonce: string): string {
     `script-src 'self' 'nonce-${nonce}'${devEval} ${CLERK_HOSTS}`,
     // Framework/Clerk inject inline styles; style injection is low-risk.
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
+    // The app ships no external images of its own (charts are inline SVG); the
+    // only remote images are Clerk avatars from img.clerk.com (matches
+    // *.clerk.com). Scoped to the Clerk hosts instead of a blanket `https:`.
+    `img-src 'self' data: ${CLERK_HOSTS}`,
     "font-src 'self' data:",
     `connect-src 'self' ${CLERK_CONNECT}`,
     "worker-src 'self' blob:",

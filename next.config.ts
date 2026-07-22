@@ -5,7 +5,11 @@ import type { NextConfig } from "next";
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+  // `preload` declares eligibility for the browser HSTS preload list. It's the
+  // header prerequisite; actual inclusion requires submitting the apex domain at
+  // hstspreload.org (matters once on a custom domain — *.vercel.app is already
+  // preloaded by Vercel). Safe to assert now: max-age is 2y with includeSubDomains.
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
   { key: "X-Frame-Options", value: "DENY" },
 ];
 
