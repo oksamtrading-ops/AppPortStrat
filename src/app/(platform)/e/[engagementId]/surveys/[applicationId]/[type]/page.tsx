@@ -106,6 +106,11 @@ export default async function SurveyFormPage({
       readOnly={ctx.readOnly || ctx.role === "CLIENT_VIEWER" || (isRespondent && finalizedAt !== null)}
       finalized={finalizedAt !== null}
       canFinalize={(ctx.role === "ENGAGEMENT_LEAD" || ctx.role === "CONSULTANT") && !ctx.readOnly}
+      reportHref={
+        ctx.role === "ENGAGEMENT_LEAD" || ctx.role === "CONSULTANT"
+          ? `/e/${engagementId}/surveys/${app.id}/${type}/responses`
+          : undefined
+      }
     />
   );
 }

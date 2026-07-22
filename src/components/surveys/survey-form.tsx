@@ -44,6 +44,7 @@ export function SurveyForm({
   readOnly,
   finalized,
   canFinalize,
+  reportHref,
 }: {
   engagementId: string;
   applicationId: string;
@@ -61,6 +62,8 @@ export function SurveyForm({
   finalized: boolean;
   /** Lead/Consultant: may Finalize/Reopen the survey. */
   canFinalize: boolean;
+  /** Lead/Consultant: link to the per-respondent breakdown report (§9). */
+  reportHref?: string;
 }) {
   const [answers, setAnswers] = useState<Record<string, AnswerView>>(initialAnswers);
   const [saveStates, setSaveStates] = useState<Record<string, SaveState>>({});
@@ -169,6 +172,11 @@ export function SurveyForm({
         <div>
           <h1 className="text-lg font-semibold">{templateName}</h1>
           <p className="text-muted-foreground text-sm">{applicationName}</p>
+          {reportHref && canFinalize ? (
+            <a href={reportHref} className="text-muted-foreground text-xs hover:underline">
+              View respondent breakdown →
+            </a>
+          ) : null}
         </div>
         <div className="flex items-center gap-3">
           {scores ? (
