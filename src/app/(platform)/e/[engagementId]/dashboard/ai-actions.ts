@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { requireEngagementContext } from "@/lib/auth/context";
 import { rateLimit } from "@/lib/db/admin";
+import { formatDate } from "@/lib/format";
 import { writeAudit } from "@/lib/audit";
 import { aiConfigured, generateNarrative } from "@/lib/ai/generate";
 import { buildBriefPrompt, buildLandscapePrompt, buildRefinePrompt, findUnverifiedNumbers, loadLandscapeBundle } from "@/lib/ai/landscape";
@@ -42,7 +43,7 @@ export async function generateAiNarrative(input: {
     const bundle = await loadLandscapeBundle(
       db,
       { name: engagement.name, clientName: engagement.clientName, currency: engagement.currency },
-      new Date().toISOString().slice(0, 10),
+      formatDate(new Date()),
     );
     const prompt = parsed.refine
       ? buildRefinePrompt(bundle, parsed.refine.previousText, parsed.refine.instruction)
@@ -98,7 +99,7 @@ export async function generateAiReport(input: {
     const data = await loadReportData(
       db,
       { name: engagement.name, clientName: engagement.clientName, currency: engagement.currency },
-      new Date().toISOString().slice(0, 10),
+      formatDate(new Date()),
     );
     let text = await generateNarrative(buildReportPrompt(data), 6000);
     const critique = await generateNarrative(buildCritiquePrompt(text, data), 1500);
@@ -141,7 +142,7 @@ export async function askPortfolioAction(input: {
     const data = await loadReportData(
       db,
       { name: engagement.name, clientName: engagement.clientName, currency: engagement.currency },
-      new Date().toISOString().slice(0, 10),
+      formatDate(new Date()),
     );
     let text = await generateNarrative(buildQaPrompt(data, parsed.question), 1000);
     const misses = findUnverifiedNumbers(text, data);

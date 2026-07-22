@@ -4,6 +4,7 @@ import { DISPOSITION_LABELS, finalDisposition } from "@/lib/methodology";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CommentsPanel } from "@/components/apps/comments-panel";
 import { toCommentViews } from "@/lib/comments";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,6 @@ export default async function ViewApplicationPage({
     orderBy: { createdAt: "asc" },
     include: { author: { select: { displayName: true, email: true } } },
   });
-  const fmt = (d: Date) => d.toISOString().slice(0, 16).replace("T", " ");
   const comments = toCommentViews(commentRows);
 
   return (
@@ -61,7 +61,7 @@ export default async function ViewApplicationPage({
               <dd className="font-medium">
                 {app.signOff
                   ? app.signOff.disposition === disposition
-                    ? `Signed off ${fmt(app.signOff.createdAt).slice(0, 10)}`
+                    ? `Signed off ${formatDate(app.signOff.createdAt)}`
                     : "Under review"
                   : "Pending"}
               </dd>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireEngagementContext } from "@/lib/auth/context";
+import { formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,10 +33,10 @@ export default async function TasksPage({ params }: { params: Promise<{ engageme
   const mine = tasks.filter((t) => t.status === "OPEN" && t.assigneeMembershipId === ctx.membershipId);
   const open = tasks.filter((t) => t.status === "OPEN" && t.assigneeMembershipId !== ctx.membershipId);
   const done = tasks.filter((t) => t.status === "DONE").slice(0, 20);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatDate(new Date());
 
   const row = (t: (typeof tasks)[number]) => {
-    const overdue = t.status === "OPEN" && t.dueDate && t.dueDate.toISOString().slice(0, 10) < today;
+    const overdue = t.status === "OPEN" && t.dueDate && formatDate(t.dueDate) < today;
     return (
       <div key={t.id} className="flex items-center gap-3 rounded border px-3 py-2 text-sm">
         <form action={toggleTask}>
@@ -56,7 +57,7 @@ export default async function TasksPage({ params }: { params: Promise<{ engageme
         {t.assignee ? <span className="text-muted-foreground text-xs">{t.assignee.displayName ?? t.assignee.email}</span> : null}
         {t.dueDate ? (
           <span className={`text-xs tabular-nums ${overdue ? "font-medium text-red-600" : "text-muted-foreground"}`}>
-            {t.dueDate.toISOString().slice(0, 10)}
+            {formatDate(t.dueDate)}
           </span>
         ) : null}
       </div>

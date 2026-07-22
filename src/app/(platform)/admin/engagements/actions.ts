@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requirePlatformAdmin } from "@/lib/auth/context";
 import { adminDb } from "@/lib/db/admin";
 import { createEngagementWithConfig } from "@/lib/db/provision";
+import { formatDate } from "@/lib/format";
 
 const PURGE_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -142,7 +143,7 @@ export async function confirmPurgeAction(formData: FormData) {
     throw new Error("Purge has not been scheduled for this engagement");
   }
   if (engagement.purgeScheduledAt.getTime() > Date.now()) {
-    throw new Error(`The grace period ends ${engagement.purgeScheduledAt.toISOString().slice(0, 10)} — purge is not yet eligible`);
+    throw new Error(`The grace period ends ${formatDate(engagement.purgeScheduledAt)} — purge is not yet eligible`);
   }
   if (parsed.confirmName.trim() !== engagement.name) {
     throw new Error("Typed name does not match the engagement");

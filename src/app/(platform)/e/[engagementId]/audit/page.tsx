@@ -1,4 +1,5 @@
 import { requireEngagementContext } from "@/lib/auth/context";
+import { formatDateTimeSeconds } from "@/lib/format";
 import {
   Table,
   TableBody,
@@ -41,7 +42,7 @@ export default async function AuditPage({ params }: { params: Promise<{ engageme
           {events.map((e) => (
             <TableRow key={e.id}>
               <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
-                {e.createdAt.toISOString().replace("T", " ").slice(0, 19)}
+                {formatDateTimeSeconds(e.createdAt)}
               </TableCell>
               <TableCell>{e.actorDisplay}</TableCell>
               <TableCell className="font-mono text-xs">{e.action}</TableCell>

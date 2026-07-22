@@ -5,6 +5,7 @@ import { ApplicationForm } from "@/components/apps/application-form";
 import { loadApplicationFormData } from "../../form-data";
 import { CommentsPanel } from "@/components/apps/comments-panel";
 import { toCommentViews } from "@/lib/comments";
+import { formatDateTime } from "@/lib/format";
 import { SignOffCard } from "@/components/apps/signoff-card";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +38,6 @@ export default async function EditApplicationPage({
     }),
     db.membership.findMany({ where: { role: { in: ["ENGAGEMENT_LEAD", "CONSULTANT"] } }, select: { displayName: true } }),
   ]);
-  const fmt = (d: Date) => d.toISOString().slice(0, 16).replace("T", " ");
   const comments = toCommentViews(commentRows);
 
   const final = finalDisposition(app);
@@ -45,7 +45,7 @@ export default async function EditApplicationPage({
     ? {
         dispositionLabel: DISPOSITION_LABELS[(app.signOff.disposition as Disposition) ?? "UNKNOWN"],
         signedByName: app.signOff.signedBy.displayName ?? app.signOff.signedBy.email,
-        signedAt: fmt(app.signOff.createdAt),
+        signedAt: formatDateTime(app.signOff.createdAt),
         note: app.signOff.note,
         stale: app.signOff.disposition !== final,
       }

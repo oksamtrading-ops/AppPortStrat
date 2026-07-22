@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requirePlatformAdmin } from "@/lib/auth/context";
 import { listCapabilityLibrariesWithNodes } from "@/lib/db/library";
+import { formatDate } from "@/lib/format";
 import { TopBar } from "@/components/shell/top-bar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -84,7 +85,7 @@ export default async function AdminLibrariesPage() {
                 </span>{" "}
                 <span className="text-muted-foreground text-sm">
                   v{l.version} · {l.nodes.length} capabilities
-                  {l.createdBy ? ` · by ${l.createdBy}` : ""} · {l.createdAt.toISOString().slice(0, 10)}
+                  {l.createdBy ? ` · by ${l.createdBy}` : ""} · {formatDate(l.createdAt)}
                 </span>
               </summary>
               {l.attribution ? <p className="text-muted-foreground mt-2 text-xs">{l.attribution}</p> : null}

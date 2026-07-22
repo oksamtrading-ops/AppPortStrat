@@ -4,6 +4,7 @@ import { ROLE_LABELS } from "@/lib/auth/roles";
 import { SidebarNav } from "@/components/shell/sidebar-nav";
 import { SIDEBAR_COOKIE } from "@/components/shell/sidebar-cookie";
 import { TopBar } from "@/components/shell/top-bar";
+import { formatDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -55,7 +56,7 @@ export default async function EngagementLayout({
                     applicationName: p.applicationName ?? "an application",
                     actorDisplay: p.actorDisplay ?? "Someone",
                     snippet: p.snippet ?? "",
-                    createdAt: n.createdAt.toISOString().slice(0, 16).replace("T", " "),
+                    createdAt: formatDateTime(n.createdAt),
                     unread: !n.readAt,
                   };
                 }),

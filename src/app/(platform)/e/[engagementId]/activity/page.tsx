@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireEngagementContext } from "@/lib/auth/context";
+import { formatDate, formatTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +48,7 @@ export default async function ActivityPage({ params }: { params: Promise<{ engag
   const events = await db.auditEvent.findMany({ orderBy: { createdAt: "desc" }, take: 100 });
   const byDay = new Map<string, typeof events>();
   for (const e of events) {
-    const day = e.createdAt.toISOString().slice(0, 10);
+    const day = formatDate(e.createdAt);
     (byDay.get(day) ?? byDay.set(day, []).get(day)!).push(e);
   }
 
@@ -66,7 +67,7 @@ export default async function ActivityPage({ params }: { params: Promise<{ engag
           {dayEvents.map((e) => (
             <div key={e.id} className="flex items-baseline gap-2 text-sm">
               <span className="text-muted-foreground w-12 shrink-0 text-xs tabular-nums">
-                {e.createdAt.toISOString().slice(11, 16)}
+                {formatTime(e.createdAt)}
               </span>
               <span>
                 <span className="font-medium">{e.actorDisplay}</span>{" "}

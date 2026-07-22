@@ -8,6 +8,8 @@
  * capability detail pages.
  */
 
+import { formatDateTime } from "@/lib/format";
+
 /** One rendered comment (root) with its one level of replies. */
 export interface CommentView {
   id: string;
@@ -67,8 +69,6 @@ export interface CommentRow {
   author: { displayName: string | null; email: string };
 }
 
-const fmt = (d: Date) => d.toISOString().slice(0, 16).replace("T", " ");
-
 /**
  * Group flat comment rows into one-level threads: each root (parentId === null)
  * carries its replies (parentId === root.id), preserving input order (callers
@@ -80,7 +80,7 @@ export function toCommentViews(rows: CommentRow[]): CommentView[] {
     body: c.body,
     internal: c.internal,
     authorName: c.author.displayName ?? c.author.email,
-    createdAt: fmt(c.createdAt),
+    createdAt: formatDateTime(c.createdAt),
   });
   return rows
     .filter((c) => !c.parentId)

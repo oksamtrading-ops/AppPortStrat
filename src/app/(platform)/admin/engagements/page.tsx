@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requirePlatformAdmin } from "@/lib/auth/context";
 import { adminDb } from "@/lib/db/admin";
+import { formatDate } from "@/lib/format";
 import { TopBar } from "@/components/shell/top-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -196,7 +197,7 @@ export default async function AdminEngagementsPage() {
                     <p className="text-muted-foreground mt-1 text-xs">
                       {eligible
                         ? "The grace period has ended. Download the final export, then confirm below. This permanently deletes all engagement data; only a tombstone remains."
-                        : `Grace period ends ${e.purgeScheduledAt!.toISOString().slice(0, 10)}. Until then the engagement stays read-only.`}
+                        : `Grace period ends ${formatDate(e.purgeScheduledAt!)}. Until then the engagement stays read-only.`}
                     </p>
                     <div className="mt-2 flex items-center gap-2">
                       <Button asChild size="sm" variant="outline">
