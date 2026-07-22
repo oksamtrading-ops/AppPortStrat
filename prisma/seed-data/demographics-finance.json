@@ -3,719 +3,862 @@
     {
       "row": 14,
       "section": "General Information",
-      "name": "IT Owner"
+      "name": "IT Owner",
+      "description": "Application manager responsible for the application (person)"
     },
     {
       "row": 15,
       "section": "General Information",
-      "name": "App Administrator"
+      "name": "App Administrator",
+      "description": null
     },
     {
       "row": 16,
       "section": "General Information",
-      "name": "App Developer"
+      "name": "App Developer",
+      "description": null
     },
     {
       "row": 17,
       "section": "General Information",
-      "name": "App SME"
+      "name": "App SME",
+      "description": null
     },
     {
       "row": 18,
       "section": "General Information",
-      "name": "Participant's Name (IT)"
+      "name": "Participant's Name (IT)",
+      "description": "Name of the person filling out data survey from IT"
     },
     {
       "row": 19,
       "section": "General Information",
-      "name": "Participant's Name (Business)"
+      "name": "Participant's Name (Business)",
+      "description": "Name of the person filling out data survey from Business"
     },
     {
       "row": 20,
       "section": "General Information",
-      "name": "Project ID"
+      "name": "Project ID",
+      "description": "Project ID of the application in order to link financial and application family information"
     },
     {
       "row": 21,
       "section": "General Information",
-      "name": "Department / Functional User"
+      "name": "Department / Functional User",
+      "description": "Department / functional user of the application"
     },
     {
       "row": 22,
       "section": "General Information",
-      "name": "Business Process"
+      "name": "Business Process",
+      "description": "Brief description of the main business process supported by the application"
     },
     {
       "row": 23,
       "section": "General Information",
-      "name": "Sub-Process"
+      "name": "Sub-Process",
+      "description": "Sub-process supported by the application"
     },
     {
       "row": 24,
       "section": "General Information",
-      "name": "Application Comparison"
+      "name": "Application Comparison",
+      "description": "Does another application used at Company have similar capabilities as compared to this application. If yes, please name this other application. If no, enter \"N/A\"."
     },
     {
       "row": 25,
       "section": "General Information",
-      "name": "Application Replacement"
+      "name": "Application Replacement",
+      "description": "Can another application used at Company replace the use of this application. If yes, please name this other application. If no, enter \"N/A\"."
     },
     {
       "row": 26,
       "section": "General Information",
-      "name": "Named Users"
+      "name": "Named Users",
+      "description": "Total number of users allowed to use this application (i.e. 1-10, 10-100, 100-1000, Over 1000)"
     },
     {
       "row": 27,
       "section": "General Information",
-      "name": "Concurrent Users"
+      "name": "Concurrent Users",
+      "description": "Number of users active at any given time for this application during normal business hours"
     },
     {
       "row": 29,
       "section": "Business Units",
-      "name": "Business Unit 1"
+      "name": "Business Unit 1",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 30,
       "section": "Business Units",
-      "name": "Business Unit 2"
+      "name": "Business Unit 2",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 31,
       "section": "Business Units",
-      "name": "Business Unit 3"
+      "name": "Business Unit 3",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 32,
       "section": "Business Units",
-      "name": "Business Unit 4"
+      "name": "Business Unit 4",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 33,
       "section": "Business Units",
-      "name": "Business Unit 5"
+      "name": "Business Unit 5",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 34,
       "section": "Business Units",
-      "name": "Business Unit 6"
+      "name": "Business Unit 6",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 35,
       "section": "Business Units",
-      "name": "Business Unit 7"
+      "name": "Business Unit 7",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 36,
       "section": "Business Units",
-      "name": "Business Unit 8"
+      "name": "Business Unit 8",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 37,
       "section": "Business Units",
-      "name": "Business Unit 9"
+      "name": "Business Unit 9",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 38,
       "section": "Business Units",
-      "name": "Business Unit 10"
+      "name": "Business Unit 10",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 39,
       "section": "Business Units",
-      "name": "Business Unit 11"
+      "name": "Business Unit 11",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 40,
       "section": "Business Units",
-      "name": "Business Unit 12"
+      "name": "Business Unit 12",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 41,
       "section": "Business Units",
-      "name": "Business Unit 13"
+      "name": "Business Unit 13",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 42,
       "section": "Business Units",
-      "name": "Business Unit 14"
+      "name": "Business Unit 14",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 43,
       "section": "Business Units",
-      "name": "Business Unit 15"
+      "name": "Business Unit 15",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 44,
       "section": "Business Units",
-      "name": "Business Unit 16"
+      "name": "Business Unit 16",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 45,
       "section": "Business Units",
-      "name": "Business Unit 17"
+      "name": "Business Unit 17",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 46,
       "section": "Business Units",
-      "name": "Business Unit 18"
+      "name": "Business Unit 18",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 47,
       "section": "Business Units",
-      "name": "Business Unit 19"
+      "name": "Business Unit 19",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 48,
       "section": "Business Units",
-      "name": "Business Unit 20"
+      "name": "Business Unit 20",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 49,
       "section": "Business Units",
-      "name": "Business Unit 21"
+      "name": "Business Unit 21",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 50,
       "section": "Business Units",
-      "name": "Business Unit 22"
+      "name": "Business Unit 22",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 51,
       "section": "Business Units",
-      "name": "Business Unit 23"
+      "name": "Business Unit 23",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 52,
       "section": "Business Units",
-      "name": "Business Unit 24"
+      "name": "Business Unit 24",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 53,
       "section": "Business Units",
-      "name": "Business Unit 25"
+      "name": "Business Unit 25",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 54,
       "section": "Business Units",
-      "name": "Business Unit 26"
+      "name": "Business Unit 26",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 55,
       "section": "Business Units",
-      "name": "Business Unit 27"
+      "name": "Business Unit 27",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 56,
       "section": "Business Units",
-      "name": "Business Unit 28"
+      "name": "Business Unit 28",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 57,
       "section": "Business Units",
-      "name": "Business Unit 29"
+      "name": "Business Unit 29",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 58,
       "section": "Business Units",
-      "name": "Business Unit 30"
+      "name": "Business Unit 30",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 59,
       "section": "Business Units",
-      "name": "Business Unit 31"
+      "name": "Business Unit 31",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 60,
       "section": "Business Units",
-      "name": "Other"
+      "name": "Other",
+      "description": "Please indicate whether the application is used by this Business Unit"
     },
     {
       "row": 62,
       "section": "Application Information",
-      "name": "Source"
+      "name": "Source",
+      "description": "Source of the application (e.g. In-house, custom, COTS, customized etc.)"
     },
     {
       "row": 63,
       "section": "Application Information",
-      "name": "Category"
+      "name": "Category",
+      "description": "Function of application, e.g. ERP/Financials, HR Systems, Business Intelligence + Data Warehouse, Middleware, internal/external information portals, Messaging & Collaboration, CRM, etc."
     },
     {
       "row": 64,
       "section": "Application Information",
-      "name": "Development Source"
+      "name": "Development Source",
+      "description": "Developed locally or centrally"
     },
     {
       "row": 65,
       "section": "Application Information",
-      "name": "Vendor"
+      "name": "Vendor",
+      "description": "Application vendor name"
     },
     {
       "row": 66,
       "section": "Application Information",
-      "name": "Version"
+      "name": "Version",
+      "description": "Version of the application"
     },
     {
       "row": 67,
       "section": "Application Information",
-      "name": "License"
+      "name": "License",
+      "description": "Number of COTS Licenses"
     },
     {
       "row": 68,
       "section": "Application Information",
-      "name": "Package"
+      "name": "Package",
+      "description": "If the application is COTS-based, what packages were used"
     },
     {
       "row": 69,
       "section": "Application Information",
-      "name": "Level of customization"
+      "name": "Level of customization",
+      "description": "If the application was purchased, provide what is the level of customization done for the organization"
     },
     {
       "row": 70,
       "section": "Application Information",
-      "name": "Refresh Schedule"
+      "name": "Refresh Schedule",
+      "description": "How often are major enhancements released"
     },
     {
       "row": 71,
       "section": "Application Information",
-      "name": "Architecture"
+      "name": "Architecture",
+      "description": "Web-based, client/server, terminal, etc."
     },
     {
       "row": 72,
       "section": "Application Information",
-      "name": "Application Languages"
+      "name": "Application Languages",
+      "description": "List the language(s) this application uses"
     },
     {
       "row": 73,
       "section": "Application Information",
-      "name": "Application Size"
+      "name": "Application Size",
+      "description": "Application size based on an estimate of the number of other applications that interface/integrate with this application"
     },
     {
       "row": 74,
       "section": "Application Information",
-      "name": "Named Users"
+      "name": "Named Users",
+      "description": "Total number of users allowed to use this application (i.e. 1-10, 10-100, 100-1000, Over 1000)"
     },
     {
       "row": 75,
       "section": "Application Information",
-      "name": "Concurrent Users"
+      "name": "Concurrent Users",
+      "description": "Number of users active at any given time for this application"
     },
     {
       "row": 76,
       "section": "Application Information",
-      "name": "Application Usage"
+      "name": "Application Usage",
+      "description": "Frequency of usage of application"
     },
     {
       "row": 77,
       "section": "Application Information",
-      "name": "Application Support"
+      "name": "Application Support",
+      "description": "Number of FTEs supporting the application"
     },
     {
       "row": 78,
       "section": "Application Information",
-      "name": "Deployment Scope"
+      "name": "Deployment Scope",
+      "description": "Deployment scope relates to the given location of the application"
     },
     {
       "row": 79,
       "section": "Application Information",
-      "name": "Date of initial deployment or purchase"
+      "name": "Date of initial deployment or purchase",
+      "description": "Purchase/deployment date of the application"
     },
     {
       "row": 80,
       "section": "Application Information",
-      "name": "Total Years of Use"
+      "name": "Total Years of Use",
+      "description": "Age of the application"
     },
     {
       "row": 81,
       "section": "Application Information",
-      "name": "Application Maturity"
+      "name": "Application Maturity",
+      "description": "Percentage of work that is maintenance/enhancement/development for the application"
     },
     {
       "row": 82,
       "section": "Application Information",
-      "name": "Managed"
+      "name": "Managed",
+      "description": "How is the application managed e.g., Texas Data Center, Amazon web services, etc."
     },
     {
       "row": 83,
       "section": "Application Information",
-      "name": "Support Hours"
+      "name": "Support Hours",
+      "description": "Hours of support e.g. 24x7, Mon-Fri 8-5"
     },
     {
       "row": 84,
       "section": "Application Information",
-      "name": "Application Size"
+      "name": "Application Size",
+      "description": "Roughly rate the size of the application, considering number of screens, interfaces, functions, reports, etc."
     },
     {
       "row": 87,
       "section": "Hardware",
-      "name": "Host Name (DNS)/Instance"
+      "name": "Host Name (DNS)/Instance",
+      "description": "Host name for each production instance/test/development environments"
     },
     {
       "row": 88,
       "section": "Hardware",
-      "name": "Environments"
+      "name": "Environments",
+      "description": "Provide the number of development, test/QA, production environments for the application"
     },
     {
       "row": 89,
       "section": "Hardware",
-      "name": "Production Instances"
+      "name": "Production Instances",
+      "description": "Number of production instances of the application (including failover instances)"
     },
     {
       "row": 90,
       "section": "Hardware",
-      "name": "Primary Hardware Platform"
+      "name": "Primary Hardware Platform",
+      "description": "Primary hardware platform of the application"
     },
     {
       "row": 91,
       "section": "Hardware",
-      "name": "Secondary Hardware Platform"
+      "name": "Secondary Hardware Platform",
+      "description": "Secondary hardware platform of the application"
     },
     {
       "row": 92,
       "section": "Hardware",
-      "name": "Primary OS"
+      "name": "Primary OS",
+      "description": "Name and version (ex. Sun v2.6) of the operating system on the primary hardware"
     },
     {
       "row": 93,
       "section": "Hardware",
-      "name": "Secondary OS"
+      "name": "Secondary OS",
+      "description": "Name and version (ex. Sun v2.6) of the operating system on the secondary hardware"
     },
     {
       "row": 94,
       "section": "Hardware",
-      "name": "Primary Server ID"
+      "name": "Primary Server ID",
+      "description": "Server ID or host name of the primary server where the application resides"
     },
     {
       "row": 95,
       "section": "Hardware",
-      "name": "Secondary Server ID"
+      "name": "Secondary Server ID",
+      "description": "Server ID or host name of the secondary server where the application resides"
     },
     {
       "row": 96,
       "section": "Hardware",
-      "name": "Primary Server Model"
+      "name": "Primary Server Model",
+      "description": "Primary server manufacturer & model (e.g. Sun e10000k)"
     },
     {
       "row": 97,
       "section": "Hardware",
-      "name": "Secondary Server Model"
+      "name": "Secondary Server Model",
+      "description": "Secondary server manufacturer & model (e.g. Sun e10000k)"
     },
     {
       "row": 98,
       "section": "Hardware",
-      "name": "Primary Server - Total CPUs"
+      "name": "Primary Server - Total CPUs",
+      "description": "Total number of CPUs on the primary server where the application resides"
     },
     {
       "row": 99,
       "section": "Hardware",
-      "name": "Secondary Server - Total CPUs"
+      "name": "Secondary Server - Total CPUs",
+      "description": "Total number of CPUs on the secondary server where the application resides"
     },
     {
       "row": 100,
       "section": "Hardware",
-      "name": "Primary Server CPU Speed"
+      "name": "Primary Server CPU Speed",
+      "description": "Speed (MHZ) of the primary server"
     },
     {
       "row": 101,
       "section": "Hardware",
-      "name": "Secondary Server CPU Speed"
+      "name": "Secondary Server CPU Speed",
+      "description": "Speed (MHZ) of the secondary server"
     },
     {
       "row": 102,
       "section": "Hardware",
-      "name": "Primary Server Memory Size"
+      "name": "Primary Server Memory Size",
+      "description": "Size of the memory, average utilization and the peak utilization of the primary server"
     },
     {
       "row": 103,
       "section": "Hardware",
-      "name": "Secondary Server Memory Size"
+      "name": "Secondary Server Memory Size",
+      "description": "Size of the memory, average utilization and the peak utilization of the secondary server"
     },
     {
       "row": 104,
       "section": "Hardware",
-      "name": "Storage"
+      "name": "Storage",
+      "description": "General storage device information e.g. storage type (SAN, N/AS, Local), manufacturer and description"
     },
     {
       "row": 105,
       "section": "Hardware",
-      "name": "Allocated Storage"
+      "name": "Allocated Storage",
+      "description": "Size of storage allocated/utilized for the application"
     },
     {
       "row": 106,
       "section": "Hardware",
-      "name": "Primary Server Location"
+      "name": "Primary Server Location",
+      "description": "Physical location where the primary server resides"
     },
     {
       "row": 107,
       "section": "Hardware",
-      "name": "Secondary Server Location"
+      "name": "Secondary Server Location",
+      "description": "Physical location where the secondary server resides"
     },
     {
       "row": 109,
       "section": "Database",
-      "name": "Primary Database Vendor"
+      "name": "Primary Database Vendor",
+      "description": "Primary database that the application supports/uses"
     },
     {
       "row": 110,
       "section": "Database",
-      "name": "Primary Database Version"
+      "name": "Primary Database Version",
+      "description": "Vendor version"
     },
     {
       "row": 111,
       "section": "Database",
-      "name": "Primary Database Type/Structure"
+      "name": "Primary Database Type/Structure",
+      "description": "Relational, NoSQL (key-value or document-oriented), etc."
     },
     {
       "row": 112,
       "section": "Database",
-      "name": "Secondary Databases"
+      "name": "Secondary Databases",
+      "description": "Secondary database that the application supports/uses (structure, vendor, version)"
     },
     {
       "row": 113,
       "section": "Database",
-      "name": "Primary Database Host"
+      "name": "Primary Database Host",
+      "description": "Primary database host name (if different than the application host)"
     },
     {
       "row": 114,
       "section": "Database",
-      "name": "Secondary Database Hosts"
+      "name": "Secondary Database Hosts",
+      "description": "Secondary database host name (if different than the application host)"
     },
     {
       "row": 115,
       "section": "Database",
-      "name": "Primary Database Size (MB)"
+      "name": "Primary Database Size (MB)",
+      "description": "Current space allocation for the primary database instance"
     },
     {
       "row": 116,
       "section": "Database",
-      "name": "Secondary Database Size (MB)"
+      "name": "Secondary Database Size (MB)",
+      "description": "Current space allocation for the secondary database instance"
     },
     {
       "row": 118,
       "section": "Middleware & Tools",
-      "name": "Middleware"
+      "name": "Middleware",
+      "description": "General information of the middleware(s) which are linked to the application e.g. manufacturer, version/release, description and location"
     },
     {
       "row": 119,
       "section": "Middleware & Tools",
-      "name": "Other Software / Tools"
+      "name": "Other Software / Tools",
+      "description": "Other software and tools such as bolt-ons, EAI, SOA, BI, etc… used by the application"
     },
     {
       "row": 121,
       "section": "Business Applications Supported",
-      "name": "Application Systems 1"
+      "name": "Application Systems 1",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 122,
       "section": "Business Applications Supported",
-      "name": "Application Systems 2"
+      "name": "Application Systems 2",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 123,
       "section": "Business Applications Supported",
-      "name": "Application Systems 3"
+      "name": "Application Systems 3",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 124,
       "section": "Business Applications Supported",
-      "name": "Application Systems 4"
+      "name": "Application Systems 4",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 125,
       "section": "Business Applications Supported",
-      "name": "Application Systems 5"
+      "name": "Application Systems 5",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 126,
       "section": "Business Applications Supported",
-      "name": "Application Systems 6"
+      "name": "Application Systems 6",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 127,
       "section": "Business Applications Supported",
-      "name": "Application Systems 7"
+      "name": "Application Systems 7",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 128,
       "section": "Business Applications Supported",
-      "name": "Application Systems 8"
+      "name": "Application Systems 8",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 129,
       "section": "Business Applications Supported",
-      "name": "Application Systems 9"
+      "name": "Application Systems 9",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 130,
       "section": "Business Applications Supported",
-      "name": "Application Systems 10"
+      "name": "Application Systems 10",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 131,
       "section": "Business Applications Supported",
-      "name": "Application Systems 11"
+      "name": "Application Systems 11",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 132,
       "section": "Business Applications Supported",
-      "name": "Application Systems 12"
+      "name": "Application Systems 12",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 133,
       "section": "Business Applications Supported",
-      "name": "Application Systems 13"
+      "name": "Application Systems 13",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 134,
       "section": "Business Applications Supported",
-      "name": "Application Systems 14"
+      "name": "Application Systems 14",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 135,
       "section": "Business Applications Supported",
-      "name": "Application Systems 15"
+      "name": "Application Systems 15",
+      "description": "Please indicate whether this application is used to support this specific business application"
     },
     {
       "row": 136,
       "section": "Business Applications Supported",
-      "name": "Application Systems 16"
+      "name": "Application Systems 16",
+      "description": "Please indicate whether this application is used to support any specific business application not already listed above"
     },
     {
       "row": 138,
       "section": "Comments",
-      "name": "Additional Comments from IT"
+      "name": "Additional Comments from IT",
+      "description": "Additional comments on application"
     },
     {
       "row": 139,
       "section": "Comments",
-      "name": "Additional Comments from Business"
+      "name": "Additional Comments from Business",
+      "description": "Additional comments on application"
     }
   ],
   "finance": [
     {
       "row": 7,
       "section": "Hardware / Infrastructure Costs",
-      "name": "Mainframe"
+      "name": "Mainframe",
+      "description": "Mainframe CPU processing including hardware, software and support expenses"
     },
     {
       "row": 8,
       "section": "Hardware / Infrastructure Costs",
-      "name": "Mid-Range"
+      "name": "Mid-Range",
+      "description": "Mid-Range hardware, software and support expenses"
     },
     {
       "row": 9,
       "section": "Hardware / Infrastructure Costs",
-      "name": "Storage"
+      "name": "Storage",
+      "description": "Tape and disk storage expenses including hardware and software"
     },
     {
       "row": 10,
       "section": "Hardware / Infrastructure Costs",
-      "name": "Disaster Recovery"
+      "name": "Disaster Recovery",
+      "description": "Disaster recovery expenses"
     },
     {
       "row": 11,
       "section": "Hardware / Infrastructure Costs",
-      "name": "Service Desk / Data Center"
+      "name": "Service Desk / Data Center",
+      "description": "Service desk and data center support expenses"
     },
     {
       "row": 12,
       "section": "Hardware / Infrastructure Costs",
-      "name": "Other"
+      "name": "Other",
+      "description": "Includes infrastructure discretionary expenses"
     },
     {
       "row": 17,
       "section": "Application Maintenance Costs",
-      "name": "Internal Staff"
+      "name": "Internal Staff",
+      "description": "Employees of the organization in the United States"
     },
     {
       "row": 18,
       "section": "Application Maintenance Costs",
-      "name": "Captive Offshore"
+      "name": "Captive Offshore",
+      "description": "Employees of the organization based outside of the United States"
     },
     {
       "row": 19,
       "section": "Application Maintenance Costs",
-      "name": "On-Shore Contractor/Consultants"
+      "name": "On-Shore Contractor/Consultants",
+      "description": "External contractors and consultants based in the United States"
     },
     {
       "row": 20,
       "section": "Application Maintenance Costs",
-      "name": "Off-Shore Contractor/Consultants"
+      "name": "Off-Shore Contractor/Consultants",
+      "description": "External contractors and consultants based outside the United States"
     },
     {
       "row": 21,
       "section": "Application Maintenance Costs",
-      "name": "Other"
+      "name": "Other",
+      "description": "Includes other application support/maintenance expenses"
     },
     {
       "row": 25,
       "section": "Application Development Costs",
-      "name": "Internal Staff"
+      "name": "Internal Staff",
+      "description": "Employees of the organization in the United States"
     },
     {
       "row": 26,
       "section": "Application Development Costs",
-      "name": "Captive Offshore"
+      "name": "Captive Offshore",
+      "description": "Employees of the organization based outside of the United States"
     },
     {
       "row": 27,
       "section": "Application Development Costs",
-      "name": "On-Shore Contractor"
+      "name": "On-Shore Contractor",
+      "description": "External contractors and consultants based in the United States"
     },
     {
       "row": 28,
       "section": "Application Development Costs",
-      "name": "Off-Shore Contractor"
+      "name": "Off-Shore Contractor",
+      "description": "External contractors and consultants based outside the United States"
     },
     {
       "row": 29,
       "section": "Application Development Costs",
-      "name": "Other"
+      "name": "Other",
+      "description": "Includes other application development expenses"
     },
     {
       "row": 33,
       "section": "Commercial Software Costs",
-      "name": "Mainframe"
+      "name": "Mainframe",
+      "description": "Mainframe software licensing and maintenance not included as part of hardware/infrastructure charges"
     },
     {
       "row": 34,
       "section": "Commercial Software Costs",
-      "name": "Mid-Range"
+      "name": "Mid-Range",
+      "description": "Mid-range software licensing and maintenance not included as part of hardware/infrastructure charges"
     },
     {
       "row": 35,
       "section": "Commercial Software Costs",
-      "name": "Desktop & Laptop"
+      "name": "Desktop & Laptop",
+      "description": "Desktop and laptop software and licensing expenses"
     },
     {
       "row": 36,
       "section": "Commercial Software Costs",
-      "name": "Other"
+      "name": "Other",
+      "description": "Other software expenses not specifically identified above"
     },
     {
       "row": 41,
       "section": "Past Costs",
-      "name": "Initial Implementation"
+      "name": "Initial Implementation",
+      "description": "Initial implementation costs of the application"
     },
     {
       "row": 44,
       "section": "Future Costs",
-      "name": "Planned Upgrade"
+      "name": "Planned Upgrade",
+      "description": "Any planned upgrade costs of the application"
     },
     {
       "row": 47,
       "section": "Budget / Revenue",
-      "name": "Budget Allocation"
+      "name": "Budget Allocation",
+      "description": "How much of the IT budget is allocated for this application"
     },
     {
       "row": 48,
       "section": "Budget / Revenue",
-      "name": "Revenue Generation"
+      "name": "Revenue Generation",
+      "description": "How much revenue is dependent upon this application"
     },
     {
       "row": 51,
       "section": "Comments",
-      "name": "Additional Comments"
+      "name": "Additional Comments",
+      "description": "Additional comments on application"
     }
   ]
 }

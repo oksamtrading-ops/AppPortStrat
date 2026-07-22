@@ -28,6 +28,8 @@ interface FieldRow {
   row: number;
   section: string;
   name: string;
+  /** Column-B definition from the workbook (extract-demfin-descriptions.ts). */
+  description?: string | null;
 }
 
 interface QuestionContent {
@@ -147,7 +149,7 @@ async function main() {
         code: `DEM_R${String(f.row).padStart(3, "0")}`,
         section: f.section,
         text: f.name,
-        description: null,
+        description: f.description ?? null,
         scoreFamily: "NONE" as const,
         ...demographicsKind(f.row),
         legacyRef: `Demographics!row${f.row}`,
@@ -161,7 +163,7 @@ async function main() {
         code: `FIN_R${String(f.row).padStart(3, "0")}`,
         section: f.section,
         text: f.name,
-        description: null,
+        description: f.description ?? null,
         scoreFamily: "NONE" as const,
         answerKind: f.section === "Comments" ? ("TEXT" as const) : ("CURRENCY" as const),
         optionListKey: null,
