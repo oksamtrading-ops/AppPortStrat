@@ -8,8 +8,15 @@ import { assignSurveys, removeAssignment } from "./assign-actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function SurveysPage({ params }: { params: Promise<{ engagementId: string }> }) {
+export default async function SurveysPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ engagementId: string }>;
+  searchParams: Promise<{ template?: string; status?: string }>;
+}) {
   const { engagementId } = await params;
+  const sp = await searchParams;
   const { ctx, db } = await requireEngagementContext(engagementId);
 
   if (ctx.role === "CLIENT_RESPONDENT") {
@@ -75,6 +82,28 @@ export default async function SurveysPage({ params }: { params: Promise<{ engage
 
   const canAssign = (ctx.role === "ENGAGEMENT_LEAD" || ctx.role === "CONSULTANT") && !ctx.readOnly;
 
+  // Drill-through from the dashboard "Data confidence" card: the in-scope apps
+  // and their status for one survey, defaulting to the outstanding (not-complete)
+  // ones. templates is scoped to this engagement, so an unknown id resolves to no card.
+  const focusTemplate = sp.template ? templates.find((t) => t.id === sp.template) : undefined;
+  const outstandingOnly = sp.status === "incomplete";
+  const focusApps = focusTemplate
+    ? (
+        await db.application.findMany({
+          where: { inScope: true },
+          orderBy: { appNumber: "asc" },
+          select: {
+            id: true,
+            name: true,
+            appNumber: true,
+            responses: { where: { templateId: focusTemplate.id }, select: { status: true } },
+          },
+        })
+      )
+        .map((a) => ({ id: a.id, name: a.name, appNumber: a.appNumber, status: a.responses[0]?.status ?? "NOT_STARTED" }))
+        .filter((a) => (outstandingOnly ? a.status !== "COMPLETE" : true))
+    : null;
+
   return (
     <div className="space-y-6">
       <div>
@@ -84,6 +113,48 @@ export default async function SurveysPage({ params }: { params: Promise<{ engage
           Respondents below.
         </p>
       </div>
+
+      {focusTemplate && focusApps ? (
+        <Card>
+          <CardHeader className="flex flex-row items-start justify-between gap-3">
+            <div>
+              <CardTitle>
+                {focusTemplate.name} — {outstandingOnly ? "outstanding" : "all in-scope apps"}
+              </CardTitle>
+              <CardDescription>
+                {focusApps.length} in-scope application{focusApps.length === 1 ? "" : "s"}
+                {outstandingOnly ? " not yet complete" : ""}
+              </CardDescription>
+            </div>
+            <Link href={`/e/${engagementId}/surveys`} className="text-muted-foreground text-xs hover:underline">
+              clear
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {focusApps.length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                Nothing outstanding — every in-scope app has this survey complete.
+              </p>
+            ) : (
+              <ul className="divide-y">
+                {focusApps.map((a) => (
+                  <li key={a.id} className="flex items-center justify-between py-2 text-sm">
+                    <Link
+                      href={`/e/${engagementId}/surveys/${a.id}/${TYPE_SLUGS[focusTemplate.type]}`}
+                      className="font-medium hover:underline"
+                    >
+                      #{a.appNumber} {a.name}
+                    </Link>
+                    <Badge variant={a.status === "COMPLETE" ? "default" : "outline"}>
+                      {a.status === "NOT_STARTED" ? "Not started" : a.status === "IN_PROGRESS" ? "In progress" : "Complete"}
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid gap-3 md:grid-cols-4">
         {templates.map((t) => (

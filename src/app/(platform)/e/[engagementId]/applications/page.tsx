@@ -111,6 +111,7 @@ export default async function ApplicationsPage({
     if (filters.scope === "in" && !app.inScope) return false;
     if (filters.scope === "out" && app.inScope) return false;
     if (filters.scope === "candidates" && !app.result?.analysisCandidate) return false;
+    if (filters.scope === "notutilized" && !(app.inScope && !app.isUtilized)) return false;
     return true;
   });
 
@@ -200,6 +201,7 @@ export default async function ApplicationsPage({
           <option value="">All scope states</option>
           <option value="in">In scope</option>
           <option value="out">Out of scope</option>
+          <option value="notutilized">No longer utilized</option>
           <option value="candidates">Analysis candidates</option>
         </select>
         <Button type="submit" size="sm" variant="outline" className="h-9">

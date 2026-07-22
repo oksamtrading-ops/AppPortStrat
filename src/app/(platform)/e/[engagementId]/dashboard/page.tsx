@@ -247,13 +247,13 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
             <DonutChart
               centerLabel={String(apps.length)}
               slices={[
-                { name: DISPOSITION_LABELS.KEEP_AS_IS, value: quadrants.keepAsIs, color: DISPOSITION_COLORS.KEEP_AS_IS },
-                { name: DISPOSITION_LABELS.RETOOL, value: quadrants.retool, color: DISPOSITION_COLORS.RETOOL },
-                { name: DISPOSITION_LABELS.REDESIGN, value: quadrants.redesign, color: DISPOSITION_COLORS.REDESIGN },
-                { name: DISPOSITION_LABELS.TERMINATE, value: quadrants.terminate, color: DISPOSITION_COLORS.TERMINATE },
-                { name: "Unknown", value: quadrants.unknown, color: DISPOSITION_COLORS.UNKNOWN },
-                { name: "No Longer Utilized", value: nlu, color: "#6b7280" },
-                { name: "Out of Scope", value: outOfScope, color: "#d1d5db" },
+                { name: DISPOSITION_LABELS.KEEP_AS_IS, value: quadrants.keepAsIs, color: DISPOSITION_COLORS.KEEP_AS_IS, href: `${base}/applications?disposition=KEEP_AS_IS` },
+                { name: DISPOSITION_LABELS.RETOOL, value: quadrants.retool, color: DISPOSITION_COLORS.RETOOL, href: `${base}/applications?disposition=RETOOL` },
+                { name: DISPOSITION_LABELS.REDESIGN, value: quadrants.redesign, color: DISPOSITION_COLORS.REDESIGN, href: `${base}/applications?disposition=REDESIGN` },
+                { name: DISPOSITION_LABELS.TERMINATE, value: quadrants.terminate, color: DISPOSITION_COLORS.TERMINATE, href: `${base}/applications?disposition=TERMINATE` },
+                { name: "Unknown", value: quadrants.unknown, color: DISPOSITION_COLORS.UNKNOWN, href: `${base}/applications?disposition=UNKNOWN` },
+                { name: "No Longer Utilized", value: nlu, color: "#6b7280", href: `${base}/applications?scope=notutilized` },
+                { name: "Out of Scope", value: outOfScope, color: "#d1d5db", href: `${base}/applications?scope=out` },
               ]}
             />
           </CardContent>
@@ -274,11 +274,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
                   centerLabel={formatMoney(finance.totalCost, currency)}
                   formatValue={(n) => formatMoney(n, currency)}
                   slices={[
-                    { name: DISPOSITION_LABELS.KEEP_AS_IS, value: finance.costOf("KEEP_AS_IS"), color: DISPOSITION_COLORS.KEEP_AS_IS },
-                    { name: DISPOSITION_LABELS.RETOOL, value: finance.costOf("RETOOL"), color: DISPOSITION_COLORS.RETOOL },
-                    { name: DISPOSITION_LABELS.REDESIGN, value: finance.costOf("REDESIGN"), color: DISPOSITION_COLORS.REDESIGN },
-                    { name: DISPOSITION_LABELS.TERMINATE, value: finance.costOf("TERMINATE"), color: DISPOSITION_COLORS.TERMINATE },
-                    { name: "Unknown", value: finance.costOf("UNKNOWN"), color: DISPOSITION_COLORS.UNKNOWN },
+                    { name: DISPOSITION_LABELS.KEEP_AS_IS, value: finance.costOf("KEEP_AS_IS"), color: DISPOSITION_COLORS.KEEP_AS_IS, href: `${base}/applications?disposition=KEEP_AS_IS` },
+                    { name: DISPOSITION_LABELS.RETOOL, value: finance.costOf("RETOOL"), color: DISPOSITION_COLORS.RETOOL, href: `${base}/applications?disposition=RETOOL` },
+                    { name: DISPOSITION_LABELS.REDESIGN, value: finance.costOf("REDESIGN"), color: DISPOSITION_COLORS.REDESIGN, href: `${base}/applications?disposition=REDESIGN` },
+                    { name: DISPOSITION_LABELS.TERMINATE, value: finance.costOf("TERMINATE"), color: DISPOSITION_COLORS.TERMINATE, href: `${base}/applications?disposition=TERMINATE` },
+                    { name: "Unknown", value: finance.costOf("UNKNOWN"), color: DISPOSITION_COLORS.UNKNOWN, href: `${base}/applications?disposition=UNKNOWN` },
                   ]}
                 />
                 <p className="text-muted-foreground mt-1 text-xs">
@@ -302,8 +302,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
                 const complete = inScopeResponses.filter((r) => r.templateId === t.id && r.status === "COMPLETE").length;
                 const partial = inScopeResponses.filter((r) => r.templateId === t.id && r.status === "IN_PROGRESS").length;
                 const missing = Math.max(0, inScope - complete - partial);
-                return (
-                  <div key={t.id}>
+                const canDrillToSurveys = ctx.role === "ENGAGEMENT_LEAD" || ctx.role === "CONSULTANT";
+                const bar = (
+                  <>
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{t.name}</span>
                       <span className="text-muted-foreground text-xs tabular-nums">
@@ -314,7 +315,19 @@ export default async function DashboardPage({ params }: { params: Promise<{ enga
                       <div className="bg-brand h-full" style={{ width: pct(complete, inScope) }} />
                       <div className="h-full bg-amber-400" style={{ width: pct(partial, inScope) }} />
                     </div>
-                  </div>
+                  </>
+                );
+                return canDrillToSurveys ? (
+                  <Link
+                    key={t.id}
+                    href={`${base}/surveys?template=${t.id}&status=incomplete`}
+                    className="hover:bg-secondary/60 -m-1 block rounded p-1 transition-colors"
+                    title={`Outstanding ${t.name} surveys`}
+                  >
+                    {bar}
+                  </Link>
+                ) : (
+                  <div key={t.id}>{bar}</div>
                 );
               })}
               <div className="text-muted-foreground space-y-1 border-t pt-2 text-xs">

@@ -5,10 +5,14 @@
  * when initial measurement fails.
  */
 
+import Link from "next/link";
+
 export interface Slice {
   name: string;
   value: number;
   color: string;
+  /** Optional drill-through target — makes the slice's arc AND legend row a link. */
+  href?: string;
 }
 
 export const CHART_COLORS = {
@@ -52,21 +56,30 @@ export function DonutChart({
       <div className="relative mx-auto h-48 w-48">
         <svg viewBox="0 0 180 180" className="h-full w-full -rotate-90">
           <circle cx="90" cy="90" r={R} fill="none" stroke="#f1f5f9" strokeWidth={STROKE} />
-          {segments.map((s) => (
-            <circle
-              key={s.name}
-              cx="90"
-              cy="90"
-              r={R}
-              fill="none"
-              stroke={s.color}
-              strokeWidth={STROKE}
-              strokeDasharray={s.dasharray}
-              strokeDashoffset={s.dashoffset}
-            >
-              <title>{`${s.name}: ${formatValue(s.value)}`}</title>
-            </circle>
-          ))}
+          {segments.map((s) => {
+            const arc = (
+              <circle
+                cx="90"
+                cy="90"
+                r={R}
+                fill="none"
+                stroke={s.color}
+                strokeWidth={STROKE}
+                strokeDasharray={s.dasharray}
+                strokeDashoffset={s.dashoffset}
+              >
+                <title>{`${s.name}: ${formatValue(s.value)}`}</title>
+              </circle>
+            );
+            // SVG anchor (not next/link, which renders an HTML <a> invalid inside <svg>).
+            return s.href ? (
+              <a key={s.name} href={s.href} className="cursor-pointer">
+                {arc}
+              </a>
+            ) : (
+              <g key={s.name}>{arc}</g>
+            );
+          })}
         </svg>
         {centerLabel ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -75,12 +88,27 @@ export function DonutChart({
         ) : null}
       </div>
       <div className="flex flex-wrap justify-center gap-x-3 gap-y-1">
-        {data.map((s) => (
-          <span key={s.name} className="text-muted-foreground flex items-center gap-1 text-xs">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
-            {s.name} <span className="tabular-nums">({formatValue(s.value)})</span>
-          </span>
-        ))}
+        {data.map((s) => {
+          const body = (
+            <>
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
+              {s.name} <span className="tabular-nums">({formatValue(s.value)})</span>
+            </>
+          );
+          return s.href ? (
+            <Link
+              key={s.name}
+              href={s.href}
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs hover:underline"
+            >
+              {body}
+            </Link>
+          ) : (
+            <span key={s.name} className="text-muted-foreground flex items-center gap-1 text-xs">
+              {body}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
