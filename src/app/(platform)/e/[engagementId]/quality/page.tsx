@@ -14,7 +14,7 @@ export default async function QualityPage({ params }: { params: Promise<{ engage
   const { ctx, db, engagement } = await requireEngagementContext(engagementId, "CONSULTANT");
   if (ctx.readOnly && ctx.role === "CLIENT_RESPONDENT") redirect(`/e/${engagementId}/surveys`);
 
-  const [apps, placeholderNodes, optionLists, assignedAppIds] = await Promise.all([
+  const [apps, capabilityNodes, optionLists, assignedAppIds] = await Promise.all([
     db.application.findMany({
       select: {
         id: true,
@@ -30,10 +30,21 @@ export default async function QualityPage({ params }: { params: Promise<{ engage
       },
       orderBy: { appNumber: "asc" },
     }),
-    db.capabilityNode.findMany({ where: { isPlaceholder: true }, select: { id: true, level: true, name: true } }),
+    db.capabilityNode.findMany({ select: { id: true, parentId: true, level: true, name: true, isPlaceholder: true } }),
     db.optionList.findMany({ include: { items: { select: { value: true } } } }),
     db.surveyAssignment.findMany({ select: { applicationId: true }, distinct: ["applicationId"] }),
   ]);
+
+  const placeholderNodes = capabilityNodes.filter((n) => n.isPlaceholder);
+  // Capability coverage: a LEAF capability (no children) with no application
+  // mapped to it — a mapping gap, or genuine whitespace to confirm. Parents are
+  // "covered" by their children, so only leaves are flagged; placeholders are
+  // handled by their own check below.
+  const parentIds = new Set(capabilityNodes.map((n) => n.parentId).filter((id): id is string => id !== null));
+  const mappedNodeIds = new Set(apps.map((a) => a.capabilityNodeId).filter((id): id is string => id !== null));
+  const emptyCapabilities = capabilityNodes.filter(
+    (n) => !parentIds.has(n.id) && !n.isPlaceholder && !mappedNodeIds.has(n.id),
+  );
 
   const pool = apps.filter((a) => a.inScope && a.isUtilized);
   const unmapped = pool.filter((a) => !a.capabilityNodeId);
@@ -69,6 +80,16 @@ export default async function QualityPage({ params }: { params: Promise<{ engage
         key: a.id,
         label: `#${a.appNumber} ${a.name}`,
         href: `/e/${engagementId}/applications/${a.id}/edit`,
+      })),
+    },
+    {
+      title: "Capabilities with no application mapped",
+      description: "Leaf capabilities nothing supports — a mapping gap, or genuine whitespace to confirm.",
+      count: emptyCapabilities.length,
+      items: emptyCapabilities.map((n) => ({
+        key: n.id,
+        label: `${n.level} · ${n.name}`,
+        href: `/e/${engagementId}/capabilities/${n.id}`,
       })),
     },
     {
